@@ -40,24 +40,27 @@ import { RecentGame } from '../interfaces/recent-game.interface';
   styles: [`
     .recent-games-sidebar {
       width: 280px;
-      background: white;
-      border: 1px solid #e5e7eb;
+      background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 8px;
       height: fit-content;
       position: sticky;
       top: 20px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
     }
 
     .sidebar-header {
       padding: 16px 20px;
-      border-bottom: 1px solid #f3f4f6;
-      background: #f9fafb;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.05);
       border-radius: 8px 8px 0 0;
     }
 
     .sidebar-header h3 {
       margin: 0;
       font-size: 16px;
+      color: #ffffff;
+    }
       font-weight: 600;
       color: #1f2937;
     }
@@ -68,11 +71,11 @@ import { RecentGame } from '../interfaces/recent-game.interface';
 
     .game-card {
       padding: 16px 20px;
-      border-bottom: 1px solid #f3f4f6;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
 
     .game-card:hover {
-      background: #f9fafb;
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .game-card:last-child {
@@ -81,7 +84,7 @@ import { RecentGame } from '../interfaces/recent-game.interface';
 
     .game-date {
       font-size: 12px;
-      color: #6b7280;
+      color: #9ca3af;
       margin-bottom: 8px;
       font-weight: 500;
     }
@@ -103,7 +106,7 @@ import { RecentGame } from '../interfaces/recent-game.interface';
 
     .team-name {
       font-size: 13px;
-      color: #374151;
+      color: #e5e7eb;
       font-weight: 500;
       flex: 1;
       white-space: nowrap;
@@ -115,13 +118,16 @@ import { RecentGame } from '../interfaces/recent-game.interface';
     .team-score {
       font-size: 14px;
       font-weight: 600;
+      color: #ffffff;
+    }
       color: #6b7280;
       min-width: 30px;
       text-align: right;
     }
 
     .team-score.winner {
-      color: #1f2937;
+      color: #ffffff;
+      font-weight: 700;
     }
 
     .game-status {

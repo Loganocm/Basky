@@ -19,20 +19,34 @@ interface CategoryLeaderboard {
   imports: [CommonModule],
   template: `
     <div class="leaderboards-container">
-      <!-- Tab Navigation -->
-      <div class="tab-navigation">
-        <button 
-          *ngFor="let tab of tabs" 
-          class="tab-button"
-          [class.active]="activeTab === tab.key"
-          (click)="setActiveTab(tab.key)">
-          {{ tab.label }}
-        </button>
+      <!-- Navigation Header -->
+      <div class="navigation-header">
+        <div class="tab-navigation">
+          <button 
+            *ngFor="let tab of tabs" 
+            class="tab-button"
+            [class.active]="activeTab === tab.key"
+            (click)="setActiveTab(tab.key)">
+            {{ tab.label }}
+          </button>
+        </div>
+        <div class="arrow-controls">
+          <button class="arrow-button" (click)="previousPage()" [disabled]="currentPage === 0">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M15 18l-6-6 6-6"/>
+            </svg>
+          </button>
+          <button class="arrow-button" (click)="nextPage()" [disabled]="currentPage >= totalPages - 1">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+          </button>
+        </div>
       </div>
 
-      <!-- Tab Content -->
+      <!-- 2x2 Grid of Categories -->
       <div class="leaderboards-grid">
-        <div *ngFor="let category of getActiveCategories()" class="category-card">
+        <div *ngFor="let category of getCurrentPageCategories()" class="category-card">
         <!-- Category Header -->
         <div class="category-header">
           <h3 class="category-title">{{ category.title }}</h3>
@@ -52,45 +66,84 @@ interface CategoryLeaderboard {
               {{ formatStat(player[category.statKey], category.format) }}
             </div>
           </div>
-          
-          <!-- View More Button -->
-          <div class="view-more-container">
-            <button class="view-more-button" (click)="viewMoreStats(category.statKey)">
-              View More
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-              </svg>
-            </button>
-          </div>
+        </div>
+        
+        <!-- View More Button Inside Card -->
+        <div class="view-more-container">
+          <button class="view-more-button" (click)="viewMoreStats(category.statKey)">
+            View More
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            </svg>
+          </button>
         </div>
       </div>
     </div>
+    </div>
   `,
   styles: [`
+    .navigation-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      gap: 20px;
+    }
+
     .tab-navigation {
       display: flex;
       justify-content: center;
       gap: 8px;
-      margin-bottom: 30px;
+      flex: 1;
+    }
+
+    .arrow-controls {
+      display: flex;
+      gap: 8px;
+    }
+
+    .arrow-button {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.05);
+      color: #e5e7eb;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .arrow-button:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.3);
+      color: #ffffff;
+    }
+
+    .arrow-button:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
     }
 
     .tab-button {
       padding: 12px 24px;
       border: none;
-      background: #f3f4f6;
-      color: #6b7280;
+      background: rgba(255, 255, 255, 0.05);
+      color: #9ca3af;
       font-size: 14px;
       font-weight: 500;
       cursor: pointer;
       border-radius: 8px;
       transition: all 0.2s;
-      border: 1px solid #e5e7eb;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .tab-button:hover {
-      color: #374151;
-      background: #e5e7eb;
-      border-color: #d1d5db;
+      color: #e5e7eb;
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.3);
     }
 
     .tab-button.active {
@@ -98,36 +151,49 @@ interface CategoryLeaderboard {
       background: #3b82f6;
       border-color: #3b82f6;
       font-weight: 600;
-      box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+      box-shadow: 0 2px 4px rgba(59, 130, 246, 0.4);
     }
 
     .category-card {
-      background: white;
-      border: 1px solid #e5e7eb;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
       overflow: hidden;
       margin-bottom: 20px;
     }
 
     .leaderboards-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      grid-template-columns: repeat(2, 1fr);
       gap: 20px;
     }
 
+    @media (max-width: 768px) {
+      .leaderboards-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .navigation-header {
+        flex-direction: column;
+      }
+    }
+
     .category-card:hover {
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+      border-color: rgba(255, 255, 255, 0.15);
     }
 
     .category-header {
       padding: 16px 20px;
-      border-bottom: 1px solid #f3f4f6;
-      background: #f9fafb;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .category-title {
       font-size: 14px;
+      color: #ffffff;
+    }
       font-weight: 600;
       color: #374151;
       margin: 0;
@@ -144,11 +210,11 @@ interface CategoryLeaderboard {
       align-items: center;
       gap: 12px;
       padding: 12px 20px;
-      border-bottom: 1px solid #f3f4f6;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
 
     .player-row:hover {
-      background: #f9fafb;
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .player-row:last-child {
@@ -164,8 +230,8 @@ interface CategoryLeaderboard {
       justify-content: center;
       font-size: 12px;
       font-weight: 600;
-      color: #6b7280;
-      background: #f3f4f6;
+      color: #e5e7eb;
+      background: rgba(255, 255, 255, 0.1);
       flex-shrink: 0;
     }
 
@@ -177,7 +243,7 @@ interface CategoryLeaderboard {
     .player-name {
       font-size: 14px;
       font-weight: 600;
-      color: #1f2937;
+      color: #ffffff;
       line-height: 1.2;
       white-space: nowrap;
       overflow: hidden;
@@ -186,7 +252,7 @@ interface CategoryLeaderboard {
 
     .player-team {
       font-size: 12px;
-      color: #6b7280;
+      color: #9ca3af;
       line-height: 1.2;
       white-space: nowrap;
       overflow: hidden;
@@ -196,15 +262,21 @@ interface CategoryLeaderboard {
     .stat-value {
       font-size: 14px;
       font-weight: 700;
-      color: #1f2937;
+      color: #60a5fa;
       flex-shrink: 0;
     }
 
     .view-more-container {
-      padding: 12px 20px;
-      border-top: 1px solid #f3f4f6;
+      padding: 0;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.03);
       display: flex;
-      justify-content: center;
+      justify-content: stretch;
+      transition: all 0.2s ease;
+    }
+
+    .view-more-container:hover {
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .view-more-button {
@@ -212,21 +284,31 @@ interface CategoryLeaderboard {
       align-items: center;
       justify-content: center;
       gap: 8px;
-      padding: 8px 24px;
-      background: #f8f9fa;
-      border: 1px solid #e5e7eb;
-      border-radius: 6px;
-      color: #374151;
-      font-size: 14px;
+      padding: 14px 20px;
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: #9ca3af;
+      font-size: 13px;
       font-weight: 500;
       cursor: pointer;
       transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
     .view-more-button:hover {
-      background: #e5e7eb;
-      border-color: #d1d5db;
-      color: #1f2937;
+      color: #60a5fa;
+    }
+
+    .view-more-button svg {
+      width: 14px;
+      height: 14px;
+      transition: transform 0.2s;
+    }
+
+    .view-more-button:hover svg {
+      transform: translateX(3px);
     }
 
     .view-more-button svg {
@@ -300,6 +382,8 @@ export class CategoryLeaderboardsComponent implements OnInit {
   generalCategories: CategoryLeaderboard[] = [];
   
   activeTab: 'offense' | 'defense' | 'general' = 'general';
+  currentPage: number = 0;
+  itemsPerPage: number = 4;
   
   tabs = [
     { key: 'general' as const, label: 'General Stats' },
@@ -312,12 +396,32 @@ export class CategoryLeaderboardsComponent implements OnInit {
     private router: Router
   ) {}
 
-  ngOnInit() {
-    this.loadCategories();
+  get totalPages(): number {
+    const categories = this.getActiveCategories();
+    return Math.ceil(categories.length / this.itemsPerPage);
   }
 
-  setActiveTab(tab: 'offense' | 'defense' | 'general') {
-    this.activeTab = tab;
+  nextPage(): void {
+    if (this.currentPage < this.totalPages - 1) {
+      this.currentPage++;
+    }
+  }
+
+  previousPage(): void {
+    if (this.currentPage > 0) {
+      this.currentPage--;
+    }
+  }
+
+  getCurrentPageCategories(): CategoryLeaderboard[] {
+    const categories = this.getActiveCategories();
+    const start = this.currentPage * this.itemsPerPage;
+    const end = start + this.itemsPerPage;
+    return categories.slice(start, end);
+  }
+
+  ngOnInit() {
+    this.loadCategories();
   }
 
   getActiveCategories(): CategoryLeaderboard[] {
@@ -692,5 +796,10 @@ export class CategoryLeaderboardsComponent implements OnInit {
 
   viewMoreStats(statKey: keyof ExtendedPlayer) {
     this.router.navigate(['/stats', statKey]);
+  }
+
+  setActiveTab(tab: 'offense' | 'defense' | 'general'): void {
+    this.activeTab = tab;
+    this.currentPage = 0; // Reset to first page when switching tabs
   }
 }
