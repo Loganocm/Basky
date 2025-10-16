@@ -55,10 +55,10 @@ import './global_styles.css';
 
         <div class="container main-layout">
           <div class="content-area">
-            <!-- Show player page when player is selected -->
-            <app-player-page *ngIf="selectedPlayer" [playerName]="selectedPlayer" (back)="clearPlayerSelection()" (viewGameEvent)="viewGame($event)"></app-player-page>
-            <!-- Show game page when game is selected -->
+            <!-- Show game page when game is selected (highest priority) -->
             <app-game-page *ngIf="selectedGame" [gameId]="selectedGame" (back)="clearGameSelection()" (viewPlayerEvent)="viewPlayer($event)"></app-game-page>
+            <!-- Show player page when player is selected -->
+            <app-player-page *ngIf="selectedPlayer && !selectedGame" [playerName]="selectedPlayer" (back)="clearPlayerSelection()" (viewGameEvent)="viewGame($event)"></app-player-page>
             <!-- Show team page when team is selected -->
             <app-team-page *ngIf="selectedTeam && !selectedPlayer && !selectedGame" [team]="selectedTeam" (back)="clearSelection()" (viewPlayerEvent)="viewPlayer($event)"></app-team-page>
             <!-- Show stat detail when stat is selected -->
@@ -436,7 +436,17 @@ export class HomeComponent {
   currentIndex: number = 0;
   private touchStartY: number = 0;
   private touchStartOffset: number = 0;
-  private previousView: 'stat' | 'team' | 'game' | null = null;
+  
+  // Circular buffer for navigation history
+  private navigationStack: Array<{
+    type: 'stat' | 'team' | 'game' | 'player';
+    selection: any;
+    searchQuery?: string;
+  } | null>;
+  private stackHead: number = 0; // Points to the next insertion position
+  private stackSize: number = 0; // Current number of items in stack
+  private readonly MAX_NAVIGATION_HISTORY = 17;
+  
   statSearchQuery: string = '';
 
   teams = [
@@ -476,6 +486,8 @@ export class HomeComponent {
     this.backgroundStyle = this.sanitizer.bypassSecurityTrustStyle(
       'background-image: url(assets/basketball-court.png); background-size: cover; background-position: center; background-repeat: no-repeat; position: relative; padding: 40px 0; flex: 1; display: flex; flex-direction: column;'
     );
+    // Initialize circular buffer with fixed size
+    this.navigationStack = new Array(this.MAX_NAVIGATION_HISTORY).fill(null);
   }
 
   onCarouselWheel(event: WheelEvent) {
@@ -519,18 +531,15 @@ export class HomeComponent {
 
   clearSelection() {
     this.selectedTeam = null;
-    this.previousView = null;
   }
 
   viewStat(statKey: keyof ExtendedPlayer) {
     this.selectedStat = statKey;
-    this.previousView = null;
     this.statSearchQuery = ''; // Reset search when viewing new stat
   }
 
   clearStatSelection() {
     this.selectedStat = null;
-    this.previousView = null;
     this.statSearchQuery = ''; // Reset search when leaving stat view
   }
 
@@ -538,35 +547,113 @@ export class HomeComponent {
     this.statSearchQuery = query;
   }
 
+  private pushToNavigationStack(type: 'stat' | 'team' | 'game' | 'player', selection: any, searchQuery?: string) {
+    // Add item at current head position
+    this.navigationStack[this.stackHead] = { type, selection, searchQuery };
+    
+    // Move head forward (circular)
+    this.stackHead = (this.stackHead + 1) % this.MAX_NAVIGATION_HISTORY;
+    
+    // Update size (capped at max)
+    if (this.stackSize < this.MAX_NAVIGATION_HISTORY) {
+      this.stackSize++;
+    }
+  }
+
+  private popFromNavigationStack() {
+    if (this.stackSize === 0) {
+      return null;
+    }
+    
+    // Move head backward (circular)
+    this.stackHead = (this.stackHead - 1 + this.MAX_NAVIGATION_HISTORY) % this.MAX_NAVIGATION_HISTORY;
+    
+    // Get the item
+    const item = this.navigationStack[this.stackHead];
+    
+    // Clear the slot (helps with garbage collection)
+    this.navigationStack[this.stackHead] = null;
+    
+    // Update size
+    this.stackSize--;
+    
+    return item;
+  }
+
+  private clearNavigationStack() {
+    this.navigationStack.fill(null);
+    this.stackHead = 0;
+    this.stackSize = 0;
+  }
+
   viewPlayer(playerName: string) {
-    // Track where we're coming from
+    // Push current view to stack before navigating
     if (this.selectedStat) {
-      this.previousView = 'stat';
+      this.pushToNavigationStack('stat', this.selectedStat, this.statSearchQuery);
+      this.selectedStat = null;
     } else if (this.selectedTeam) {
-      this.previousView = 'team';
+      this.pushToNavigationStack('team', this.selectedTeam);
+      this.selectedTeam = null;
     } else if (this.selectedGame) {
-      this.previousView = 'game';
+      this.pushToNavigationStack('game', this.selectedGame);
+      this.selectedGame = null;
+    } else if (this.selectedPlayer) {
+      this.pushToNavigationStack('player', this.selectedPlayer);
     }
     this.selectedPlayer = playerName;
   }
 
   clearPlayerSelection() {
     this.selectedPlayer = null;
-    // Don't clear the previous view - we want to restore it
-    // Only clear previousView when we explicitly navigate elsewhere
-    if (this.previousView !== 'stat' && this.previousView !== 'team' && this.previousView !== 'game') {
-      this.previousView = null;
+    
+    // Pop from navigation stack to restore previous view
+    const previousNav = this.popFromNavigationStack();
+    if (previousNav) {
+      if (previousNav.type === 'game') {
+        this.selectedGame = previousNav.selection;
+      } else if (previousNav.type === 'stat') {
+        this.selectedStat = previousNav.selection;
+        this.statSearchQuery = previousNav.searchQuery || '';
+      } else if (previousNav.type === 'team') {
+        this.selectedTeam = previousNav.selection;
+      } else if (previousNav.type === 'player') {
+        this.selectedPlayer = previousNav.selection;
+      }
     }
   }
 
   viewGame(game: any) {
+    // Push current view to stack before navigating
+    if (this.selectedPlayer) {
+      this.pushToNavigationStack('player', this.selectedPlayer);
+      this.selectedPlayer = null;
+    } else if (this.selectedTeam) {
+      this.pushToNavigationStack('team', this.selectedTeam);
+      this.selectedTeam = null;
+    } else if (this.selectedStat) {
+      this.pushToNavigationStack('stat', this.selectedStat, this.statSearchQuery);
+      this.selectedStat = null;
+    }
     this.selectedGame = game;
-    this.previousView = null;
   }
 
   clearGameSelection() {
     this.selectedGame = null;
-    this.previousView = null;
+    
+    // Pop from navigation stack to restore previous view
+    const previousNav = this.popFromNavigationStack();
+    if (previousNav) {
+      if (previousNav.type === 'player') {
+        this.selectedPlayer = previousNav.selection;
+      } else if (previousNav.type === 'stat') {
+        this.selectedStat = previousNav.selection;
+        this.statSearchQuery = previousNav.searchQuery || '';
+      } else if (previousNav.type === 'team') {
+        this.selectedTeam = previousNav.selection;
+      } else if (previousNav.type === 'game') {
+        this.selectedGame = previousNav.selection;
+      }
+    }
   }
 }
 

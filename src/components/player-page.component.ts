@@ -1,6 +1,7 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BasketballDataService, ExtendedPlayer } from '../services/basketball-data.service';
+import { RecentGame } from '../interfaces/recent-game.interface';
 
 interface Game {
   opponent: string;
@@ -303,7 +304,7 @@ interface Game {
 export class PlayerPageComponent implements OnInit {
   @Input() playerName: string = '';
   @Output() back = new EventEmitter<void>();
-  @Output() viewGameEvent = new EventEmitter<Game>();
+  @Output() viewGameEvent = new EventEmitter<RecentGame>();
 
   player: ExtendedPlayer | null = null;
   recentGames: Game[] = [];
@@ -343,6 +344,16 @@ export class PlayerPageComponent implements OnInit {
   }
 
   viewGame(game: Game) {
-    this.viewGameEvent.emit(game);
+    // Convert the Game object to a RecentGame object for the game page
+    const recentGame: RecentGame = {
+      id: Math.floor(Math.random() * 10000), // Generate a random ID
+      homeTeam: this.player?.team || 'UNK',
+      awayTeam: game.opponent,
+      homeScore: game.result === 'W' ? game.points + 5 : game.points - 5,
+      awayScore: game.result === 'W' ? game.points - 5 : game.points + 5,
+      date: new Date(game.date),
+      status: 'Final'
+    };
+    this.viewGameEvent.emit(recentGame);
   }
 }
