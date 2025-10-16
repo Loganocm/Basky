@@ -1,6 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
 import { Player } from './player-card.component';
 import { BasketballDataService, ExtendedPlayer } from '../services/basketball-data.service';
 
@@ -61,7 +60,7 @@ interface CategoryLeaderboard {
 
         <!-- Top 4 Players -->
         <div class="players-list">
-          <div *ngFor="let player of category.players; let i = index" class="player-row">
+          <div *ngFor="let player of category.players; let i = index" class="player-row" (click)="viewPlayer(player.name)">
             <div class="rank-badge">
               {{ i + 1 }}
             </div>
@@ -235,9 +234,7 @@ interface CategoryLeaderboard {
     .category-title {
       font-size: 14px;
       color: #ffffff;
-    }
       font-weight: 600;
-      color: #374151;
       margin: 0;
       text-transform: uppercase;
       letter-spacing: 0.05em;
@@ -253,6 +250,7 @@ interface CategoryLeaderboard {
       gap: 12px;
       padding: 12px 20px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      cursor: pointer;
     }
 
     .player-row:hover {
@@ -419,6 +417,9 @@ interface CategoryLeaderboard {
   `]
 })
 export class CategoryLeaderboardsComponent implements OnInit {
+  @Output() viewStat = new EventEmitter<keyof ExtendedPlayer>();
+  @Output() viewPlayerEvent = new EventEmitter<string>();
+
   offenseCategories: CategoryLeaderboard[] = [];
   defenseCategories: CategoryLeaderboard[] = [];
   generalCategories: CategoryLeaderboard[] = [];
@@ -434,8 +435,7 @@ export class CategoryLeaderboardsComponent implements OnInit {
   ];
 
   constructor(
-    private basketballService: BasketballDataService,
-    private router: Router
+    private basketballService: BasketballDataService
   ) {}
 
   get totalPages(): number {
@@ -837,7 +837,11 @@ export class CategoryLeaderboardsComponent implements OnInit {
   }
 
   viewMoreStats(statKey: keyof ExtendedPlayer) {
-    this.router.navigate(['/stats', statKey]);
+    this.viewStat.emit(statKey);
+  }
+
+  viewPlayer(playerName: string) {
+    this.viewPlayerEvent.emit(playerName);
   }
 
   setActiveTab(tab: 'offense' | 'defense' | 'general'): void {

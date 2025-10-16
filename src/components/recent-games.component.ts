@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BasketballDataService } from '../services/basketball-data.service';
 import { RecentGame } from '../interfaces/recent-game.interface';
@@ -14,7 +14,7 @@ import { RecentGame } from '../interfaces/recent-game.interface';
       </div>
       
       <div class="games-list">
-        <div *ngFor="let game of recentGames" class="game-card">
+        <div *ngFor="let game of recentGames" class="game-card" (click)="viewGame(game)">
           <div class="game-date">
             {{ formatDate(game.date) }}
           </div>
@@ -60,9 +60,7 @@ import { RecentGame } from '../interfaces/recent-game.interface';
       margin: 0;
       font-size: 16px;
       color: #ffffff;
-    }
       font-weight: 600;
-      color: #1f2937;
     }
 
     .games-list {
@@ -72,6 +70,7 @@ import { RecentGame } from '../interfaces/recent-game.interface';
     .game-card {
       padding: 16px 20px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      cursor: pointer;
     }
 
     .game-card:hover {
@@ -118,8 +117,6 @@ import { RecentGame } from '../interfaces/recent-game.interface';
     .team-score {
       font-size: 14px;
       font-weight: 600;
-      color: #ffffff;
-    }
       color: #6b7280;
       min-width: 30px;
       text-align: right;
@@ -148,6 +145,8 @@ import { RecentGame } from '../interfaces/recent-game.interface';
   `]
 })
 export class RecentGamesComponent implements OnInit {
+  @Output() viewGameEvent = new EventEmitter<RecentGame>();
+  
   recentGames: RecentGame[] = [];
 
   constructor(private basketballService: BasketballDataService) {}
@@ -172,5 +171,9 @@ export class RecentGamesComponent implements OnInit {
         day: 'numeric' 
       });
     }
+  }
+
+  viewGame(game: RecentGame) {
+    this.viewGameEvent.emit(game);
   }
 }

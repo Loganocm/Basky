@@ -6,14 +6,17 @@ import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 import { CategoryLeaderboardsComponent } from './components/category-leaderboards.component';
 import { RecentGamesComponent } from './components/recent-games.component';
 import { StatDetailComponent } from './components/stat-detail.component';
-import { BasketballDataService } from './services/basketball-data.service';
+import { TeamPageComponent } from './components/team-page.component';
+import { PlayerPageComponent } from './components/player-page.component';
+import { GamePageComponent } from './components/game-page.component';
+import { BasketballDataService, ExtendedPlayer } from './services/basketball-data.service';
 import { provideHttpClient } from '@angular/common/http';
 import './global_styles.css';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, CategoryLeaderboardsComponent, RecentGamesComponent],
+  imports: [CommonModule, CategoryLeaderboardsComponent, RecentGamesComponent, TeamPageComponent, StatDetailComponent, PlayerPageComponent, GamePageComponent],
   template: `
     <div class="app-container">
       <header class="header">
@@ -52,10 +55,24 @@ import './global_styles.css';
 
         <div class="container main-layout">
           <div class="content-area">
-            <app-category-leaderboards></app-category-leaderboards>
+            <!-- Show player page when player is selected -->
+            <app-player-page *ngIf="selectedPlayer" [playerName]="selectedPlayer" (back)="clearPlayerSelection()" (viewGameEvent)="viewGame($event)"></app-player-page>
+            <!-- Show game page when game is selected -->
+            <app-game-page *ngIf="selectedGame" [gameId]="selectedGame" (back)="clearGameSelection()" (viewPlayerEvent)="viewPlayer($event)"></app-game-page>
+            <!-- Show team page when team is selected -->
+            <app-team-page *ngIf="selectedTeam && !selectedPlayer && !selectedGame" [team]="selectedTeam" (back)="clearSelection()" (viewPlayerEvent)="viewPlayer($event)"></app-team-page>
+            <!-- Show stat detail when stat is selected -->
+            <app-stat-detail *ngIf="selectedStat && !selectedPlayer && !selectedGame" 
+              [statKey]="selectedStat!" 
+              [initialSearchQuery]="statSearchQuery"
+              (back)="clearStatSelection()" 
+              (viewPlayerEvent)="viewPlayer($event)"
+              (searchQueryChange)="onStatSearchQueryChange($event)"></app-stat-detail>
+            <!-- Show leaderboards when nothing is selected -->
+            <app-category-leaderboards *ngIf="!selectedTeam && !selectedStat && !selectedPlayer && !selectedGame" (viewStat)="viewStat($event)" (viewPlayerEvent)="viewPlayer($event)"></app-category-leaderboards>
           </div>
-          <div class="sidebar-area">
-            <app-recent-games></app-recent-games>
+          <div class="sidebar-area" *ngIf="!selectedTeam && !selectedStat && !selectedPlayer && !selectedGame">
+            <app-recent-games (viewGameEvent)="viewGame($event)"></app-recent-games>
           </div>
         </div>
       </main>
@@ -412,42 +429,47 @@ import './global_styles.css';
 export class HomeComponent {
   backgroundStyle: SafeStyle;
   selectedTeam: any = null;
+  selectedStat: keyof ExtendedPlayer | null = null;
+  selectedPlayer: string | null = null;
+  selectedGame: any = null;
   carouselOffset: number = 0;
   currentIndex: number = 0;
   private touchStartY: number = 0;
   private touchStartOffset: number = 0;
+  private previousView: 'stat' | 'team' | 'game' | null = null;
+  statSearchQuery: string = '';
 
   teams = [
-    { name: 'Lakers', abbreviation: 'LAL' },
-    { name: 'Warriors', abbreviation: 'GSW' },
-    { name: 'Celtics', abbreviation: 'BOS' },
-    { name: 'Heat', abbreviation: 'MIA' },
     { name: 'Bucks', abbreviation: 'MIL' },
-    { name: 'Suns', abbreviation: 'PHX' },
-    { name: 'Nets', abbreviation: 'BKN' },
+    { name: 'Bulls', abbreviation: 'CHI' },
+    { name: 'Cavaliers', abbreviation: 'CLE' },
+    { name: 'Celtics', abbreviation: 'BOS' },
     { name: 'Clippers', abbreviation: 'LAC' },
-    { name: '76ers', abbreviation: 'PHI' },
-    { name: 'Nuggets', abbreviation: 'DEN' },
-    { name: 'Mavericks', abbreviation: 'DAL' },
     { name: 'Grizzlies', abbreviation: 'MEM' },
     { name: 'Hawks', abbreviation: 'ATL' },
-    { name: 'Cavaliers', abbreviation: 'CLE' },
-    { name: 'Bulls', abbreviation: 'CHI' },
-    { name: 'Knicks', abbreviation: 'NYK' },
-    { name: 'Raptors', abbreviation: 'TOR' },
-    { name: 'Timberwolves', abbreviation: 'MIN' },
-    { name: 'Pelicans', abbreviation: 'NOP' },
-    { name: 'Kings', abbreviation: 'SAC' },
-    { name: 'Trail Blazers', abbreviation: 'POR' },
-    { name: 'Jazz', abbreviation: 'UTA' },
-    { name: 'Spurs', abbreviation: 'SAS' },
-    { name: 'Thunder', abbreviation: 'OKC' },
-    { name: 'Pacers', abbreviation: 'IND' },
-    { name: 'Wizards', abbreviation: 'WAS' },
+    { name: 'Heat', abbreviation: 'MIA' },
     { name: 'Hornets', abbreviation: 'CHA' },
+    { name: 'Jazz', abbreviation: 'UTA' },
+    { name: 'Kings', abbreviation: 'SAC' },
+    { name: 'Knicks', abbreviation: 'NYK' },
+    { name: 'Lakers', abbreviation: 'LAL' },
     { name: 'Magic', abbreviation: 'ORL' },
+    { name: 'Mavericks', abbreviation: 'DAL' },
+    { name: 'Nets', abbreviation: 'BKN' },
+    { name: 'Nuggets', abbreviation: 'DEN' },
+    { name: 'Pacers', abbreviation: 'IND' },
+    { name: 'Pelicans', abbreviation: 'NOP' },
     { name: 'Pistons', abbreviation: 'DET' },
-    { name: 'Rockets', abbreviation: 'HOU' }
+    { name: 'Raptors', abbreviation: 'TOR' },
+    { name: 'Rockets', abbreviation: 'HOU' },
+    { name: 'Spurs', abbreviation: 'SAS' },
+    { name: 'Suns', abbreviation: 'PHX' },
+    { name: 'Thunder', abbreviation: 'OKC' },
+    { name: 'Timberwolves', abbreviation: 'MIN' },
+    { name: 'Trail Blazers', abbreviation: 'POR' },
+    { name: 'Warriors', abbreviation: 'GSW' },
+    { name: 'Wizards', abbreviation: 'WAS' },
+    { name: '76ers', abbreviation: 'PHI' }
   ];
 
   constructor(private sanitizer: DomSanitizer) {
@@ -486,9 +508,65 @@ export class HomeComponent {
   }
 
   selectTeam(team: any) {
-    this.selectedTeam = team;
-    // Here you can add logic to filter stats by team
-    console.log('Selected team:', team);
+    // If clicking the same team, clear selection
+    if (this.selectedTeam === team) {
+      this.selectedTeam = null;
+    } else {
+      // Select the team
+      this.selectedTeam = team;
+    }
+  }
+
+  clearSelection() {
+    this.selectedTeam = null;
+    this.previousView = null;
+  }
+
+  viewStat(statKey: keyof ExtendedPlayer) {
+    this.selectedStat = statKey;
+    this.previousView = null;
+    this.statSearchQuery = ''; // Reset search when viewing new stat
+  }
+
+  clearStatSelection() {
+    this.selectedStat = null;
+    this.previousView = null;
+    this.statSearchQuery = ''; // Reset search when leaving stat view
+  }
+
+  onStatSearchQueryChange(query: string) {
+    this.statSearchQuery = query;
+  }
+
+  viewPlayer(playerName: string) {
+    // Track where we're coming from
+    if (this.selectedStat) {
+      this.previousView = 'stat';
+    } else if (this.selectedTeam) {
+      this.previousView = 'team';
+    } else if (this.selectedGame) {
+      this.previousView = 'game';
+    }
+    this.selectedPlayer = playerName;
+  }
+
+  clearPlayerSelection() {
+    this.selectedPlayer = null;
+    // Don't clear the previous view - we want to restore it
+    // Only clear previousView when we explicitly navigate elsewhere
+    if (this.previousView !== 'stat' && this.previousView !== 'team' && this.previousView !== 'game') {
+      this.previousView = null;
+    }
+  }
+
+  viewGame(game: any) {
+    this.selectedGame = game;
+    this.previousView = null;
+  }
+
+  clearGameSelection() {
+    this.selectedGame = null;
+    this.previousView = null;
   }
 }
 

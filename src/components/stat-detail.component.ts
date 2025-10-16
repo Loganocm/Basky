@@ -1,12 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { BasketballDataService, ExtendedPlayer } from '../services/basketball-data.service';
 
 @Component({
   selector: 'app-stat-detail',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="stat-detail-container">
       <!-- Header -->
@@ -29,60 +29,61 @@ import { BasketballDataService, ExtendedPlayer } from '../services/basketball-da
 
       <!-- Players List -->
       <main class="main-content">
-        <div class="container">
-          <div class="players-table-card">
-            <div class="category-icon">
-              <img *ngIf="getStatCategory() === 'general'" src="assets/general.svg" alt="General Stats" width="48" height="48">
-              <img *ngIf="getStatCategory() === 'offense'" src="assets/offense.svg" alt="Offensive Stats" width="48" height="48">
-              <img *ngIf="getStatCategory() === 'defense'" src="assets/defense.svg" alt="Defensive Stats" width="48" height="48">
-            </div>
-            <div class="table-header">
-              <h2>Leaderboard</h2>
-              <span class="player-count">{{ players.length }} players</span>
-            </div>
+        <!-- Search Bar -->
+        <div class="search-container">
+          <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+          <input 
+            type="text" 
+            class="search-input" 
+            placeholder="Search players by name, team, or position..." 
+            [(ngModel)]="searchQuery"
+            (input)="filterPlayers()"
+          />
+          <span class="player-count">{{ filteredPlayers.length }} of {{ allPlayers.length }} players</span>
+        </div>
 
-            <div class="table-container desktop-view">
-              <table class="players-table">
-                <thead>
-                  <tr>
-                    <th class="rank-col">Rank</th>
-                    <th class="player-col">Player</th>
-                    <th class="team-col">Team</th>
-                    <th class="position-col">Position</th>
-                    <th class="stat-col">{{ getStatTitle() }}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let player of players; let i = index" class="player-row">
-                    <td class="rank-cell">
-                      <div class="rank-badge" [class]="getRankClass(i)">{{ i + 1 }}</div>
-                    </td>
-                    <td class="player-cell">
-                      <div class="player-name">{{ player.name }}</div>
-                    </td>
-                    <td class="team-cell">{{ player.team }}</td>
-                    <td class="position-cell">
-                      <span class="position-badge">{{ player.position }}</span>
-                    </td>
-                    <td class="stat-cell">
-                      <div class="stat-value">{{ formatStatValue(player[statKey]) }}</div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <div class="mobile-view">
-              <div *ngFor="let player of players; let i = index" class="mobile-player-card">
-                <div class="mobile-player-header">
-                  <div class="rank-badge" [class]="getRankClass(i)">{{ i + 1 }}</div>
-                  <div class="mobile-player-info">
-                    <div class="player-name">{{ player.name }}</div>
-                    <div class="player-meta">{{ player.team }} • {{ player.position }}</div>
-                  </div>
+        <div class="table-container desktop-view">
+          <table class="players-table">
+            <thead>
+              <tr>
+                <th class="rank-col">Rank</th>
+                <th class="player-col">Player</th>
+                <th class="team-col">Team</th>
+                <th class="position-col">Position</th>
+                <th class="stat-col">{{ getStatTitle() }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let player of filteredPlayers; let i = index" class="player-row" (click)="viewPlayer(player.name)">
+                <td class="rank-cell">
+                  <div class="rank-badge" [class]="getRankClass(player.originalRank)">{{ player.originalRank + 1 }}</div>
+                </td>
+                <td class="player-cell">
+                  <div class="player-name">{{ player.name }}</div>
+                </td>
+                <td class="team-cell">{{ player.team }}</td>
+                <td class="position-cell">
+                  <span class="position-badge">{{ player.position }}</span>
+                </td>
+                <td class="stat-cell">
                   <div class="stat-value">{{ formatStatValue(player[statKey]) }}</div>
-                </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mobile-view">
+          <div *ngFor="let player of filteredPlayers; let i = index" class="mobile-player-card" (click)="viewPlayer(player.name)">
+            <div class="mobile-player-header">
+              <div class="rank-badge" [class]="getRankClass(player.originalRank)">{{ player.originalRank + 1 }}</div>
+              <div class="mobile-player-info">
+                <div class="player-name">{{ player.name }}</div>
+                <div class="player-meta">{{ player.team }} • {{ player.position }}</div>
               </div>
+              <div class="stat-value">{{ formatStatValue(player[statKey]) }}</div>
             </div>
           </div>
         </div>
@@ -143,18 +144,63 @@ import { BasketballDataService, ExtendedPlayer } from '../services/basketball-da
     }
 
     .main-content {
-      padding: 30px 0;
-    }
-
-    .players-table-card {
       background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 12px;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3),
                   0 2px 4px -1px rgba(0, 0, 0, 0.2),
                   0 0 0 1px rgba(255, 255, 255, 0.05);
       overflow: hidden;
+      margin: 0px 0;
+      padding: 0;
+    }
+
+    .search-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 20px 24px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.03);
       position: relative;
+    }
+
+    .search-icon {
+      width: 20px;
+      height: 20px;
+      color: #9ca3af;
+      flex-shrink: 0;
+    }
+
+    .search-input {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      padding: 10px 16px;
+      color: #ffffff;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .search-input::placeholder {
+      color: #6b7280;
+    }
+
+    .search-input:focus {
+      outline: none;
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .player-count {
+      font-size: 13px;
+      color: #9ca3af;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .table-container {
+      width: 100%;
     }
 
     .category-icon {
@@ -171,28 +217,6 @@ import { BasketballDataService, ExtendedPlayer } from '../services/basketball-da
     .category-icon:hover {
       opacity: 1;
       transform: scale(1.05);
-    }
-
-    .table-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 20px 24px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      background: rgba(255, 255, 255, 0.05);
-    }
-
-    .table-header h2 {
-      font-size: 18px;
-      font-weight: 600;
-      color: #ffffff;
-      margin: 0;
-    }
-
-    .player-count {
-      font-size: 14px;
-      color: #9ca3af;
-      font-weight: 500;
     }
 
     .table-container {
@@ -223,6 +247,7 @@ import { BasketballDataService, ExtendedPlayer } from '../services/basketball-da
 
     .player-row:hover {
       background: rgba(255, 255, 255, 0.05);
+      cursor: pointer;
     }
 
     .player-row:last-child td {
@@ -320,10 +345,6 @@ import { BasketballDataService, ExtendedPlayer } from '../services/basketball-da
         gap: 12px;
       }
 
-      .table-header {
-        padding: 16px 20px;
-      }
-
       .header-title h1 {
         font-size: 24px;
       }
@@ -339,31 +360,57 @@ import { BasketballDataService, ExtendedPlayer } from '../services/basketball-da
   `]
 })
 export class StatDetailComponent implements OnInit {
-  players: ExtendedPlayer[] = [];
-  statKey: keyof ExtendedPlayer = 'points';
+  @Input() statKey: keyof ExtendedPlayer = 'points';
+  @Input() initialSearchQuery: string = '';
+  @Output() back = new EventEmitter<void>();
+  @Output() viewPlayerEvent = new EventEmitter<string>();
+  @Output() searchQueryChange = new EventEmitter<string>();
+  
+  allPlayers: (ExtendedPlayer & { originalRank: number })[] = [];
+  filteredPlayers: (ExtendedPlayer & { originalRank: number })[] = [];
+  searchQuery: string = '';
   statFormat: 'number' | 'percentage' = 'number';
 
   constructor(
-    private route: ActivatedRoute,
-    private router: Router,
     private basketballService: BasketballDataService
   ) {}
 
   ngOnInit() {
-    this.route.params.subscribe(params => {
-      this.statKey = params['statKey'] as keyof ExtendedPlayer;
-      this.statFormat = this.getStatFormat(this.statKey);
-      this.loadPlayers();
-    });
+    this.statFormat = this.getStatFormat(this.statKey);
+    this.searchQuery = this.initialSearchQuery;
+    this.loadPlayers();
   }
 
   loadPlayers() {
-    const allPlayers = this.basketballService.getPlayers();
-    this.players = [...allPlayers].sort((a, b) => {
-      const aValue = a[this.statKey] as number;
-      const bValue = b[this.statKey] as number;
-      return bValue - aValue;
-    });
+    const players = this.basketballService.getPlayers();
+    this.allPlayers = [...players]
+      .sort((a, b) => {
+        const aValue = a[this.statKey] as number;
+        const bValue = b[this.statKey] as number;
+        return bValue - aValue;
+      })
+      .map((player, index) => ({
+        ...player,
+        originalRank: index
+      }));
+    this.filterPlayers();
+  }
+
+  filterPlayers() {
+    const query = this.searchQuery.toLowerCase().trim();
+    
+    if (!query) {
+      this.filteredPlayers = [...this.allPlayers];
+    } else {
+      this.filteredPlayers = this.allPlayers.filter(player => 
+        player.name.toLowerCase().includes(query) ||
+        player.team.toLowerCase().includes(query) ||
+        player.position.toLowerCase().includes(query)
+      );
+    }
+    
+    // Emit the search query change
+    this.searchQueryChange.emit(this.searchQuery);
   }
 
   getStatTitle(): string {
@@ -494,6 +541,10 @@ export class StatDetailComponent implements OnInit {
   }
 
   goBack() {
-    this.router.navigate(['/']);
+    this.back.emit();
+  }
+
+  viewPlayer(playerName: string) {
+    this.viewPlayerEvent.emit(playerName);
   }
 }
