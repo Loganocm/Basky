@@ -215,6 +215,10 @@ interface CategoryLeaderboard {
       .navigation-header {
         flex-direction: column;
       }
+
+      .category-icon {
+        display: none;
+      }
     }
 
     .category-card:hover {
