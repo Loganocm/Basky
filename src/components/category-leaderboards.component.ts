@@ -19,6 +19,13 @@ interface CategoryLeaderboard {
   imports: [CommonModule],
   template: `
     <div class="leaderboards-container">
+      <!-- Category Icon -->
+      <div class="category-icon">
+        <img [style.display]="activeTab === 'general' ? 'block' : 'none'" src="assets/general.svg" alt="General Stats" width="48" height="48">
+        <img [style.display]="activeTab === 'offense' ? 'block' : 'none'" src="assets/offense.svg" alt="Offensive Stats" width="48" height="48">
+        <img [style.display]="activeTab === 'defense' ? 'block' : 'none'" src="assets/defense.svg" alt="Defensive Stats" width="48" height="48">
+      </div>
+      
       <!-- Navigation Header -->
       <div class="navigation-header">
         <div class="tab-navigation">
@@ -82,12 +89,41 @@ interface CategoryLeaderboard {
     </div>
   `,
   styles: [`
+    .leaderboards-container {
+      position: relative;
+      min-height: 600px;
+    }
+
+    .category-icon {
+      position: absolute;
+      top: -10px;
+      left: 0;
+      width: 48px;
+      height: 48px;
+      z-index: 10;
+      opacity: 0.9;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      pointer-events: none;
+    }
+
+    .category-icon img {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .category-icon:hover {
+      opacity: 1;
+      transform: scale(1.05);
+    }
+
     .navigation-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 30px;
       gap: 20px;
+      width: 100%;
     }
 
     .tab-navigation {
@@ -167,6 +203,8 @@ interface CategoryLeaderboard {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 20px;
+      width: 100%;
+      min-height: 400px;
     }
 
     @media (max-width: 768px) {

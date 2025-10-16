@@ -88,6 +88,7 @@ import './global_styles.css';
       display: flex;
       gap: 30px;
       align-items: flex-start;
+      justify-content: center;
       position: relative;
       z-index: 1;
       padding: 40px 0;
@@ -95,8 +96,13 @@ import './global_styles.css';
     }
 
     .content-area {
-      flex: 1;
-      min-width: 0;
+      width: 1000px;
+      max-width: 1000px;
+      min-width: 1000px;
+      flex: 0 0 1000px;
+      height: fit-content;
+      min-height: 600px;
+      max-height: fit-content;
       background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
       border-radius: 16px;
       padding: 30px;
@@ -108,6 +114,7 @@ import './global_styles.css';
       transition: all 0.3s ease;
       position: relative;
       z-index: 1;
+      overflow-y: auto;
     }
 
     .content-area:hover {
@@ -166,6 +173,25 @@ import './global_styles.css';
       .sidebar-area {
         display: none;
       }
+    }
+
+    /* Custom Scrollbar */
+    .content-area::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .content-area::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+    }
+
+    .content-area::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+    }
+
+    .content-area::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
     }
 
     .main-overlay {

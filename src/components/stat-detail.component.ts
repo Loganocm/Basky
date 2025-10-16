@@ -31,6 +31,11 @@ import { BasketballDataService, ExtendedPlayer } from '../services/basketball-da
       <main class="main-content">
         <div class="container">
           <div class="players-table-card">
+            <div class="category-icon">
+              <img *ngIf="getStatCategory() === 'general'" src="assets/general.svg" alt="General Stats" width="48" height="48">
+              <img *ngIf="getStatCategory() === 'offense'" src="assets/offense.svg" alt="Offensive Stats" width="48" height="48">
+              <img *ngIf="getStatCategory() === 'defense'" src="assets/defense.svg" alt="Defensive Stats" width="48" height="48">
+            </div>
             <div class="table-header">
               <h2>Leaderboard</h2>
               <span class="player-count">{{ players.length }} players</span>
@@ -87,13 +92,14 @@ import { BasketballDataService, ExtendedPlayer } from '../services/basketball-da
   styles: [`
     .stat-detail-container {
       min-height: 100vh;
-      background: #f8f9fa;
+      background: #0a0a0a;
     }
 
     .header {
-      background: white;
-      border-bottom: 1px solid #e5e7eb;
+      background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+      border-bottom: 1px solid #2a2a2a;
       padding: 20px 0;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     }
 
     .header-content {
@@ -107,10 +113,10 @@ import { BasketballDataService, ExtendedPlayer } from '../services/basketball-da
       align-items: center;
       gap: 8px;
       padding: 8px 16px;
-      background: #f3f4f6;
-      border: 1px solid #d1d5db;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.2);
       border-radius: 6px;
-      color: #374151;
+      color: #e5e7eb;
       font-size: 14px;
       font-weight: 500;
       cursor: pointer;
@@ -118,19 +124,20 @@ import { BasketballDataService, ExtendedPlayer } from '../services/basketball-da
     }
 
     .back-button:hover {
-      background: #e5e7eb;
-      border-color: #9ca3af;
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.3);
+      color: #ffffff;
     }
 
     .header-title h1 {
       font-size: 28px;
       font-weight: 700;
-      color: #1f2937;
+      color: #ffffff;
       margin: 0;
     }
 
     .header-subtitle {
-      color: #6b7280;
+      color: #9ca3af;
       font-size: 16px;
       margin: 4px 0 0 0;
     }
@@ -140,11 +147,30 @@ import { BasketballDataService, ExtendedPlayer } from '../services/basketball-da
     }
 
     .players-table-card {
-      background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3),
+                  0 2px 4px -1px rgba(0, 0, 0, 0.2),
+                  0 0 0 1px rgba(255, 255, 255, 0.05);
       overflow: hidden;
+      position: relative;
+    }
+
+    .category-icon {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      width: 48px;
+      height: 48px;
+      z-index: 10;
+      opacity: 0.9;
+      transition: all 0.3s ease;
+    }
+
+    .category-icon:hover {
+      opacity: 1;
+      transform: scale(1.05);
     }
 
     .table-header {
@@ -152,20 +178,20 @@ import { BasketballDataService, ExtendedPlayer } from '../services/basketball-da
       justify-content: space-between;
       align-items: center;
       padding: 20px 24px;
-      border-bottom: 1px solid #f3f4f6;
-      background: #f9fafb;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .table-header h2 {
       font-size: 18px;
       font-weight: 600;
-      color: #1f2937;
+      color: #ffffff;
       margin: 0;
     }
 
     .player-count {
       font-size: 14px;
-      color: #6b7280;
+      color: #9ca3af;
       font-weight: 500;
     }
 
@@ -179,24 +205,24 @@ import { BasketballDataService, ExtendedPlayer } from '../services/basketball-da
     }
 
     .players-table th {
-      background: #f9fafb;
+      background: rgba(255, 255, 255, 0.05);
       padding: 16px 24px;
       text-align: left;
       font-size: 12px;
       font-weight: 600;
-      color: #374151;
+      color: #9ca3af;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      border-bottom: 1px solid #e5e7eb;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .players-table td {
       padding: 16px 24px;
-      border-bottom: 1px solid #f3f4f6;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     }
 
     .player-row:hover {
-      background: #f9fafb;
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .player-row:last-child td {
@@ -229,19 +255,19 @@ import { BasketballDataService, ExtendedPlayer } from '../services/basketball-da
     .player-name {
       font-size: 15px;
       font-weight: 600;
-      color: #1f2937;
+      color: #ffffff;
     }
 
     .team-cell {
       font-size: 14px;
-      color: #374151;
+      color: #d1d5db;
     }
 
     .position-badge {
       display: inline-block;
       padding: 4px 8px;
-      background: #e5e7eb;
-      color: #374151;
+      background: rgba(255, 255, 255, 0.1);
+      color: #e5e7eb;
       border-radius: 4px;
       font-size: 12px;
       font-weight: 500;
@@ -250,7 +276,7 @@ import { BasketballDataService, ExtendedPlayer } from '../services/basketball-da
     .stat-value {
       font-size: 16px;
       font-weight: 700;
-      color: #1f2937;
+      color: #ffffff;
     }
 
     .mobile-view {
@@ -262,7 +288,7 @@ import { BasketballDataService, ExtendedPlayer } from '../services/basketball-da
     }
 
     .mobile-player-card {
-      border-bottom: 1px solid #f3f4f6;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .mobile-player-card:last-child {
@@ -283,7 +309,7 @@ import { BasketballDataService, ExtendedPlayer } from '../services/basketball-da
 
     .player-meta {
       font-size: 12px;
-      color: #6b7280;
+      color: #9ca3af;
       margin-top: 4px;
     }
 
@@ -417,6 +443,54 @@ export class StatDetailComponent implements OnInit {
     if (index === 1) return 'rank-silver';
     if (index === 2) return 'rank-bronze';
     return 'rank-default';
+  }
+
+  getStatCategory(): 'general' | 'offense' | 'defense' {
+    const offenseStats = [
+      'contestedShotPercentage',
+      'uncontestedShotPercentage',
+      'catchAndShootPercentage',
+      'pullUpShotPercentage',
+      'shotsCreatedForOthers',
+      'gravityScore',
+      'offBallScreenAssists',
+      'hockeyAssists',
+      'fourthQuarterPerformance',
+      'clutchTimeStats',
+      'gameWinningShotsMade',
+      'vsTop10DefensesPerformance',
+      'backToBackGamePerformance',
+      'shotQualityIndex',
+      'rimFrequencyPercentage',
+      'midRangeFrequencyPercentage',
+      'corner3Percentage',
+      'fastBreakPointsPerGame',
+      'offensivePointsAdded'
+    ];
+
+    const defenseStats = [
+      'opponentFieldGoalPercentageWhenGuarded',
+      'deflectionsPerGame',
+      'chargesDrawnPerGame',
+      'looseBallsRecoveredPerGame',
+      'defensiveWinShares',
+      'rimProtectionPercentage',
+      'helpDefenseRotations',
+      'contestedShotsPerGame',
+      'screenAssistsPerGame',
+      'milesTraveledPerGame',
+      'divingForLooseBalls',
+      'transitionDefenseStops',
+      'defensiveEstimatedPlusMinus'
+    ];
+
+    if (offenseStats.includes(this.statKey as string)) {
+      return 'offense';
+    } else if (defenseStats.includes(this.statKey as string)) {
+      return 'defense';
+    } else {
+      return 'general';
+    }
   }
 
   goBack() {
