@@ -46,7 +46,7 @@ interface CategoryLeaderboard {
           <div class="category-header"><h3 class="category-title">{{ category.title }}</h3></div>
           <div class="players-list">
             <div *ngFor="let player of category.players; let i = index" class="player-row" (click)="viewPlayer(player.name)">
-              <div class="rank-badge">{{ i + 1 }}</div>
+              <div class="rank-badge" [ngClass]="getRankClass(i)">{{ i + 1 }}</div>
               <div class="player-info">
                 <div class="player-name">{{ player.name }}</div>
                 <div class="player-team">{{ player.teamAbbreviation }}</div>
@@ -79,7 +79,10 @@ interface CategoryLeaderboard {
     .players-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
     .player-row { display: flex; align-items: center; gap: 12px; padding: 10px; background: rgba(255, 255, 255, 0.03); border-radius: 8px; cursor: pointer; transition: all 0.2s; }
     .player-row:hover { background: rgba(255, 255, 255, 0.08); }
-    .rank-badge { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 6px; color: #60a5fa; font-size: 13px; font-weight: 700; }
+    .rank-badge { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 6px; color: #60a5fa; font-size: 13px; font-weight: 700; transition: all 0.2s; }
+    .rank-badge.rank-gold { background: linear-gradient(135deg, #ffd700, #ffed4e); border-color: #ffd700; color: #000000; box-shadow: 0 0 12px rgba(255, 215, 0, 0.4); }
+    .rank-badge.rank-silver { background: linear-gradient(135deg, #c0c0c0, #e8e8e8); border-color: #c0c0c0; color: #000000; box-shadow: 0 0 12px rgba(192, 192, 192, 0.4); }
+    .rank-badge.rank-bronze { background: linear-gradient(135deg, #cd7f32, #e8a87c); border-color: #cd7f32; color: #000000; box-shadow: 0 0 12px rgba(205, 127, 50, 0.4); }
     .player-info { flex: 1; min-width: 0; }
     .player-name { font-size: 14px; font-weight: 600; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .player-team { font-size: 12px; color: #6b7280; margin-top: 2px; }
@@ -209,5 +212,12 @@ export class CategoryLeaderboardsComponent implements OnInit, OnChanges {
 
   viewMoreStats(statKey: keyof Player) {
     this.viewMoreStatsEvent.emit(statKey);
+  }
+
+  getRankClass(index: number): string {
+    if (index === 0) return 'rank-gold';
+    if (index === 1) return 'rank-silver';
+    if (index === 2) return 'rank-bronze';
+    return '';
   }
 }
