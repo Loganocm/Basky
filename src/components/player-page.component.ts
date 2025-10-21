@@ -1,15 +1,16 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BasketballDataService, ExtendedPlayer } from '../services/basketball-data.service';
+import { BasketballDataService, Player } from '../services/basketball-data.service';
 import { RecentGame } from '../interfaces/recent-game.interface';
 
-interface Game {
+interface GameDisplay {
   opponent: string;
   date: string;
   points: number;
   rebounds: number;
   assists: number;
   result: 'W' | 'L';
+  gameData: RecentGame; // Store the actual game data
 }
 
 @Component({
@@ -30,7 +31,7 @@ interface Game {
           <div class="player-info">
             <h1>{{ player.name }}</h1>
             <div class="player-meta">
-              <span class="team">{{ player.team }}</span>
+              <span class="team">{{ player.teamAbbreviation }}</span>
               <span class="divider">•</span>
               <span class="position">{{ player.position }}</span>
             </div>
@@ -38,30 +39,32 @@ interface Game {
         </div>
       </div>
 
-      <!-- Stats Grid -->
-      <div class="stats-grid" *ngIf="player">
-        <div class="stat-card">
-          <div class="stat-label">Points Per Game</div>
-          <div class="stat-value">{{ player.points.toFixed(1) }}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Rebounds Per Game</div>
-          <div class="stat-value">{{ player.rebounds.toFixed(1) }}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Assists Per Game</div>
-          <div class="stat-value">{{ player.assists.toFixed(1) }}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Player Efficiency</div>
-          <div class="stat-value">{{ player.playerEfficiencyRating.toFixed(1) }}</div>
+      <!-- Player Bio -->
+      <div class="bio-section" *ngIf="player">
+        <div class="bio-card">
+          <div class="bio-item">
+            <span class="bio-label">Jersey</span>
+            <span class="bio-value">#{{ player.jerseyNumber || '--' }}</span>
+          </div>
+          <div class="bio-item">
+            <span class="bio-label">Age</span>
+            <span class="bio-value">{{ player.age || '--' }}</span>
+          </div>
+          <div class="bio-item">
+            <span class="bio-label">Height</span>
+            <span class="bio-value">{{ player.height || '--' }}</span>
+          </div>
+          <div class="bio-item">
+            <span class="bio-label">Weight</span>
+            <span class="bio-value">{{ player.weight ? player.weight + ' lbs' : '--' }}</span>
+          </div>
         </div>
       </div>
 
       <!-- Recent Games -->
-      <div class="recent-games-section">
-        <h2>Recent Games</h2>
-        <div class="games-list">
+      <div class="recent-games-section" *ngIf="player">
+        <h2 class="section-title">Recent Games (Last 3)</h2>
+        <div *ngIf="recentGames.length > 0" class="games-list">
           <div *ngFor="let game of recentGames" class="game-card" (click)="viewGame(game)">
             <div class="game-result" [class.win]="game.result === 'W'" [class.loss]="game.result === 'L'">
               {{ game.result }}
@@ -75,6 +78,161 @@ interface Game {
               <span class="stat">{{ game.rebounds }} REB</span>
               <span class="stat">{{ game.assists }} AST</span>
             </div>
+          </div>
+        </div>
+        <div *ngIf="recentGames.length === 0" class="no-data">
+          <p>No recent game data available</p>
+        </div>
+      </div>
+
+      <!-- Per Game Stats -->
+      <div class="stats-category" *ngIf="player">
+        <h2 class="section-title">Per Game Stats</h2>
+        <div class="stats-grid">
+          <div class="stat-card highlight">
+            <div class="stat-label">Points</div>
+            <div class="stat-value">{{ player.points?.toFixed(1) || '0.0' }}</div>
+          </div>
+          <div class="stat-card highlight">
+            <div class="stat-label">Rebounds</div>
+            <div class="stat-value">{{ player.rebounds?.toFixed(1) || '0.0' }}</div>
+          </div>
+          <div class="stat-card highlight">
+            <div class="stat-label">Assists</div>
+            <div class="stat-value">{{ player.assists?.toFixed(1) || '0.0' }}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Games Played</div>
+            <div class="stat-value">{{ player.gamesPlayed || 0 }}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Minutes</div>
+            <div class="stat-value">{{ player.minutesPerGame?.toFixed(1) || '0.0' }}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Steals</div>
+            <div class="stat-value">{{ player.steals?.toFixed(1) || '0.0' }}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Blocks</div>
+            <div class="stat-value">{{ player.blocks?.toFixed(1) || '0.0' }}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Turnovers</div>
+            <div class="stat-value">{{ player.turnovers?.toFixed(1) || '0.0' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Shooting Stats -->
+      <div class="stats-category" *ngIf="player">
+        <h2 class="section-title">Shooting</h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">FG%</div>
+            <div class="stat-value">{{ (player.fieldGoalPercentage * 100)?.toFixed(1) || '0.0' }}%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">3P%</div>
+            <div class="stat-value">{{ (player.threePointPercentage * 100)?.toFixed(1) || '0.0' }}%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">FT%</div>
+            <div class="stat-value">{{ (player.freeThrowPercentage * 100)?.toFixed(1) || '0.0' }}%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">FGM</div>
+            <div class="stat-value">{{ player.fieldGoalsMade?.toFixed(1) || '0.0' }}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">FGA</div>
+            <div class="stat-value">{{ player.fieldGoalsAttempted?.toFixed(1) || '0.0' }}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">3PM</div>
+            <div class="stat-value">{{ player.threePointersMade?.toFixed(1) || '0.0' }}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">3PA</div>
+            <div class="stat-value">{{ player.threePointersAttempted?.toFixed(1) || '0.0' }}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">FTM</div>
+            <div class="stat-value">{{ player.freeThrowsMade?.toFixed(1) || '0.0' }}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">FTA</div>
+            <div class="stat-value">{{ player.freeThrowsAttempted?.toFixed(1) || '0.0' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Advanced Stats -->
+      <div class="stats-category" *ngIf="player">
+        <h2 class="section-title">Advanced Stats</h2>
+        <div class="stats-grid">
+          <div class="stat-card highlight">
+            <div class="stat-label">PER</div>
+            <div class="stat-value">{{ player.playerEfficiencyRating?.toFixed(1) || '0.0' }}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">TS%</div>
+            <div class="stat-value">{{ (player.trueShootingPercentage * 100)?.toFixed(1) || '0.0' }}%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">eFG%</div>
+            <div class="stat-value">{{ (player.effectiveFieldGoalPercentage * 100)?.toFixed(1) || '0.0' }}%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">AST/TO</div>
+            <div class="stat-value">{{ player.assistToTurnoverRatio?.toFixed(2) || '0.00' }}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Usage Rate</div>
+            <div class="stat-value">{{ player.usageRate?.toFixed(1) || '0.0' }}%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Impact Score</div>
+            <div class="stat-value">{{ player.impactScore?.toFixed(1) || '0.0' }}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Efficiency</div>
+            <div class="stat-value">{{ player.efficiencyRating?.toFixed(1) || '0.0' }}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">+/-</div>
+            <div class="stat-value">{{ player.plusMinus?.toFixed(1) || '0.0' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Misc Stats -->
+      <div class="stats-category" *ngIf="player">
+        <h2 class="section-title">Other</h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">OREB</div>
+            <div class="stat-value">{{ player.offensiveRebounds?.toFixed(1) || '0.0' }}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">DREB</div>
+            <div class="stat-value">{{ player.defensiveRebounds?.toFixed(1) || '0.0' }}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Personal Fouls</div>
+            <div class="stat-value">{{ player.personalFouls?.toFixed(1) || '0.0' }}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Fantasy Points</div>
+            <div class="stat-value">{{ player.fantasyPoints?.toFixed(1) || '0.0' }}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Double Doubles</div>
+            <div class="stat-value">{{ player.doubleDoubles || 0 }}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Triple Doubles</div>
+            <div class="stat-value">{{ player.tripleDoubles || 0 }}</div>
           </div>
         </div>
       </div>
@@ -159,20 +317,72 @@ interface Game {
       font-weight: 600;
     }
 
-    .stats-grid {
+    .bio-section {
+      margin-bottom: 30px;
+    }
+
+    .bio-card {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .bio-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .bio-label {
+      font-size: 11px;
+      color: #9ca3af;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .bio-value {
+      font-size: 18px;
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid rgba(59, 130, 246, 0.3);
+    }
+
+    .stats-category {
       margin-bottom: 40px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 16px;
     }
 
     .stat-card {
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 12px;
-      padding: 20px;
+      border-radius: 8px;
+      padding: 16px;
       text-align: center;
       transition: all 0.2s;
+    }
+
+    .stat-card.highlight {
+      background: rgba(59, 130, 246, 0.1);
+      border-color: rgba(59, 130, 246, 0.3);
     }
 
     .stat-card:hover {
@@ -181,8 +391,13 @@ interface Game {
       transform: translateY(-2px);
     }
 
+    .stat-card.highlight:hover {
+      background: rgba(59, 130, 246, 0.15);
+      border-color: rgba(59, 130, 246, 0.4);
+    }
+
     .stat-label {
-      font-size: 12px;
+      font-size: 11px;
       color: #9ca3af;
       text-transform: uppercase;
       font-weight: 600;
@@ -191,20 +406,27 @@ interface Game {
     }
 
     .stat-value {
-      font-size: 32px;
+      font-size: 24px;
       font-weight: 700;
       color: #ffffff;
     }
 
     .recent-games-section {
-      margin-top: 40px;
+      margin-bottom: 40px;
     }
 
-    .recent-games-section h2 {
-      font-size: 24px;
-      font-weight: 700;
-      color: #ffffff;
-      margin-bottom: 20px;
+    .no-data {
+      text-align: center;
+      padding: 40px 20px;
+      color: #9ca3af;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+    }
+
+    .no-data p {
+      margin: 0;
+      font-size: 14px;
     }
 
     .games-list {
@@ -285,6 +507,10 @@ interface Game {
         grid-template-columns: repeat(2, 1fr);
       }
 
+      .bio-card {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
       .player-info h1 {
         font-size: 28px;
       }
@@ -299,6 +525,17 @@ interface Game {
         justify-content: space-between;
       }
     }
+
+    @media (max-width: 480px) {
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .bio-card {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+      }
+    }
   `]
 })
 export class PlayerPageComponent implements OnInit {
@@ -306,54 +543,99 @@ export class PlayerPageComponent implements OnInit {
   @Output() back = new EventEmitter<void>();
   @Output() viewGameEvent = new EventEmitter<RecentGame>();
 
-  player: ExtendedPlayer | null = null;
-  recentGames: Game[] = [];
+  player: Player | null = null;
+  recentGames: GameDisplay[] = [];
 
   constructor(private basketballService: BasketballDataService) {}
 
   ngOnInit() {
     this.loadPlayerData();
-    this.loadRecentGames();
   }
 
   loadPlayerData() {
-    const players = this.basketballService.getPlayers();
-    this.player = players.find(p => p.name === this.playerName) || null;
+    this.basketballService.getAllPlayers().subscribe(players => {
+      this.player = players.find(p => p.name === this.playerName) || null;
+      
+      // Load recent games AFTER player data is loaded
+      if (this.player) {
+        this.loadRecentGames();
+      }
+    });
   }
 
   loadRecentGames() {
-    // Generate mock recent games data
-    const opponents = ['LAL', 'GSW', 'BOS', 'MIA', 'PHX'];
-    const results: ('W' | 'L')[] = ['W', 'L', 'W', 'W', 'L'];
+    if (!this.player?.id) {
+      console.warn('Cannot load recent games: player ID not available');
+      this.recentGames = [];
+      return;
+    }
     
-    this.recentGames = Array.from({ length: 5 }, (_, i) => ({
-      opponent: opponents[i],
-      date: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric' 
-      }),
-      points: Math.floor(Math.random() * 20) + 15,
-      rebounds: Math.floor(Math.random() * 8) + 3,
-      assists: Math.floor(Math.random() * 8) + 2,
-      result: results[i]
-    }));
+    console.log(`Loading recent games for player ID: ${this.player.id} (${this.player.name})`);
+    
+    // Load box scores for this specific player from the backend using player ID
+    this.basketballService.getBoxScoresByPlayer(this.player.id).subscribe({
+      next: (boxScores) => {
+        console.log(`Fetched ${boxScores.length} box scores for player ${this.player?.name}`);
+        
+        // Get the last 3 games
+        const recentBoxScores = boxScores.slice(0, 3);
+        
+        // For each box score, fetch the game details
+        const gameRequests = recentBoxScores.map(boxScore =>
+          this.basketballService.getGameById(boxScore.gameId)
+        );
+        
+        // Wait for all game details to load
+        if (gameRequests.length === 0) {
+          console.log('No box scores found for this player');
+          this.recentGames = [];
+          return;
+        }
+        
+        // Combine box scores with game data
+        Promise.all(gameRequests.map(obs => obs.toPromise())).then(games => {
+          this.recentGames = recentBoxScores.map((boxScore, index) => {
+            const game = games[index];
+            if (!game) return null;
+            
+            const isHomeTeam = game.homeTeamId === this.player?.teamId;
+            const teamScore = isHomeTeam ? game.homeScore : game.awayScore;
+            const opponentScore = isHomeTeam ? game.awayScore : game.homeScore;
+            const opponent = isHomeTeam ? game.awayTeamAbbreviation : game.homeTeamAbbreviation;
+            
+            return {
+              opponent: opponent,
+              date: new Date(game.gameDate).toLocaleDateString('en-US', { 
+                month: 'short', 
+                day: 'numeric',
+                year: 'numeric'
+              }),
+              points: boxScore.points || 0,
+              rebounds: boxScore.rebounds || 0,
+              assists: boxScore.assists || 0,
+              result: teamScore > opponentScore ? 'W' as const : 'L' as const,
+              gameData: game
+            };
+          }).filter((game): game is GameDisplay => game !== null);
+          console.log(`Displaying ${this.recentGames.length} recent games`);
+        }).catch(error => {
+          console.error('Error loading game details:', error);
+          this.recentGames = [];
+        });
+      },
+      error: (error) => {
+        console.error('Error loading box scores:', error);
+        this.recentGames = [];
+      }
+    });
   }
 
   goBack() {
     this.back.emit();
   }
 
-  viewGame(game: Game) {
-    // Convert the Game object to a RecentGame object for the game page
-    const recentGame: RecentGame = {
-      id: Math.floor(Math.random() * 10000), // Generate a random ID
-      homeTeam: this.player?.team || 'UNK',
-      awayTeam: game.opponent,
-      homeScore: game.result === 'W' ? game.points + 5 : game.points - 5,
-      awayScore: game.result === 'W' ? game.points - 5 : game.points + 5,
-      date: new Date(game.date),
-      status: 'Final'
-    };
-    this.viewGameEvent.emit(recentGame);
+  viewGame(game: GameDisplay) {
+    // Use the actual game data stored in the GameDisplay object
+    this.viewGameEvent.emit(game.gameData);
   }
 }

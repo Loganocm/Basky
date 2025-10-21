@@ -16,22 +16,22 @@ import { RecentGame } from '../interfaces/recent-game.interface';
       <div class="games-list">
         <div *ngFor="let game of recentGames" class="game-card" (click)="viewGame(game)">
           <div class="game-date">
-            {{ formatDate(game.date) }}
+            {{ formatDate(game.gameDate) }}
           </div>
           
           <div class="game-matchup">
             <div class="team-row">
-              <span class="team-name">{{ game.awayTeam }}</span>
-              <span class="team-score">{{ game.awayScore }}</span>
+              <span class="team-name">{{ game.awayTeamAbbreviation || game.awayTeamName }}</span>
+              <span class="team-score" [class.winner]="game.awayScore > game.homeScore">{{ game.awayScore }}</span>
             </div>
             <div class="team-row">
-              <span class="team-name">{{ game.homeTeam }}</span>
+              <span class="team-name">{{ game.homeTeamAbbreviation || game.homeTeamName }}</span>
               <span class="team-score" [class.winner]="game.homeScore > game.awayScore">{{ game.homeScore }}</span>
             </div>
           </div>
           
           <div class="game-status">
-            {{ game.status }}
+            Final
           </div>
         </div>
       </div>
@@ -152,16 +152,18 @@ export class RecentGamesComponent implements OnInit {
   constructor(private basketballService: BasketballDataService) {}
 
   ngOnInit() {
-    this.recentGames = this.basketballService.getRecentGames();
+    this.basketballService.getRecentGames(6).subscribe(games => {
+      this.recentGames = games;
+    });
   }
 
-  formatDate(date: Date): string {
+  formatDate(date: string): string {
     const today = new Date();
     const gameDate = new Date(date);
     const diffTime = Math.abs(today.getTime() - gameDate.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays === 1) {
+    if (diffDays === 0 || diffDays === 1) {
       return 'Today';
     } else if (diffDays === 2) {
       return 'Yesterday';

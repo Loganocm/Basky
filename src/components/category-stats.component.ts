@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Player } from './player-card.component';
+import { Player } from '../services/basketball-data.service';
 
 @Component({
   selector: 'app-category-stats',
@@ -104,12 +104,12 @@ import { Player } from './player-card.component';
                 <span class="stat-label">PER</span>
               </div>
               <div class="stat-item">
-                <span class="stat-value">{{ player.boxPlusMinus > 0 ? '+' : '' }}{{ player.boxPlusMinus }}</span>
-                <span class="stat-label">BPM</span>
+                <span class="stat-value">{{ player.plusMinus > 0 ? '+' : '' }}{{ player.plusMinus }}</span>
+                <span class="stat-label">+/-</span>
               </div>
               <div class="stat-item">
-                <span class="stat-value">{{ player.winShares }}</span>
-                <span class="stat-label">WS</span>
+                <span class="stat-value">{{ player.efficiencyRating }}</span>
+                <span class="stat-label">EFF</span>
               </div>
             </div>
           </div>

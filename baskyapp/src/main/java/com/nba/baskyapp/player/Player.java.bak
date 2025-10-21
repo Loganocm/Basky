@@ -1,0 +1,342 @@
+package com.nba.baskyapp.player;
+
+import com.nba.baskyapp.team.Team;
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "players")
+public class Player {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "name", length = 100)
+    private String name;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_id")
+    private Team team;
+
+    @Column(name = "position", length = 50)
+    private String position;
+
+    @Column(name = "height")
+    private String height;
+
+    @Column(name = "weight")
+    private Integer weight;
+
+    @Column(name = "age")
+    private Integer age;
+
+    // Season Stats
+    @Column(name = "games_played")
+    private Integer gamesPlayed;
+
+    @Column(name = "minutes_per_game")
+    private Double minutesPerGame;
+
+    @Column(name = "points")
+    private Double points;
+
+    @Column(name = "rebounds")
+    private Double rebounds;
+
+    @Column(name = "assists")
+    private Double assists;
+
+    @Column(name = "steals")
+    private Double steals;
+
+    @Column(name = "blocks")
+    private Double blocks;
+
+    @Column(name = "turnovers")
+    private Double turnovers;
+
+    @Column(name = "field_goal_percentage")
+    private Double fieldGoalPercentage;
+
+    @Column(name = "three_point_percentage")
+    private Double threePointPercentage;
+
+    @Column(name = "free_throw_percentage")
+    private Double freeThrowPercentage;
+
+    // Additional shooting stats
+    @Column(name = "offensive_rebounds")
+    private Double offensiveRebounds;
+
+    @Column(name = "defensive_rebounds")
+    private Double defensiveRebounds;
+
+    @Column(name = "field_goals_made")
+    private Double fieldGoalsMade;
+
+    @Column(name = "field_goals_attempted")
+    private Double fieldGoalsAttempted;
+
+    @Column(name = "three_pointers_made")
+    private Double threePointersMade;
+
+    @Column(name = "three_pointers_attempted")
+    private Double threePointersAttempted;
+
+    @Column(name = "free_throws_made")
+    private Double freeThrowsMade;
+
+    @Column(name = "free_throws_attempted")
+    private Double freeThrowsAttempted;
+
+    // Advanced stats
+    @Column(name = "plus_minus")
+    private Double plusMinus;
+
+    @Column(name = "fantasy_points")
+    private Double fantasyPoints;
+
+    @Column(name = "double_doubles")
+    private Integer doubleDoubles;
+
+    @Column(name = "triple_doubles")
+    private Integer tripleDoubles;
+
+    @Column(name = "personal_fouls")
+    private Double personalFouls;
+
+    // Calculated advanced metrics
+    @Column(name = "efficiency_rating")
+    private Double efficiencyRating;
+
+    @Column(name = "true_shooting_percentage")
+    private Double trueShootingPercentage;
+
+    @Column(name = "effective_field_goal_percentage")
+    private Double effectiveFieldGoalPercentage;
+
+    @Column(name = "assist_to_turnover_ratio")
+    private Double assistToTurnoverRatio;
+
+    @Column(name = "impact_score")
+    private Double impactScore;
+
+    @Column(name = "usage_rate")
+    private Double usageRate;
+
+    @Column(name = "player_efficiency_rating")
+    private Double playerEfficiencyRating;
+
+    @Column(name = "is_starter")
+    private Boolean isStarter;
+
+    // Constructors
+    public Player() {
+        this.isStarter = false; // Default value
+    }
+
+    public Player(String name) {
+        this.name = name;
+        this.isStarter = false;
+    }
+
+    // Getters and Setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Long getNbaApiId() {
+        return nbaApiId;
+    }
+
+    public void setNbaApiId(Long nbaApiId) {
+        this.nbaApiId = nbaApiId;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public Team getTeam() {
+        return team;
+    }
+
+    public void setTeam(Team team) {
+        this.team = team;
+    }
+
+    public String getPosition() {
+        return position;
+    }
+
+    public void setPosition(String position) {
+        this.position = position;
+    }
+
+    public String getHeight() {
+        return height;
+    }
+
+    public void setHeight(String height) {
+        this.height = height;
+    }
+
+    public Integer getWeight() {
+        return weight;
+    }
+
+    public void setWeight(Integer weight) {
+        this.weight = weight;
+    }
+
+    public String getCollege() {
+        return college;
+    }
+
+    public void setCollege(String college) {
+        this.college = college;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
+    public Integer getDraftYear() {
+        return draftYear;
+    }
+
+    public void setDraftYear(Integer draftYear) {
+        this.draftYear = draftYear;
+    }
+
+    public Integer getDraftRound() {
+        return draftRound;
+    }
+
+    public void setDraftRound(Integer draftRound) {
+        this.draftRound = draftRound;
+    }
+
+    public Integer getDraftNumber() {
+        return draftNumber;
+    }
+
+    public void setDraftNumber(Integer draftNumber) {
+        this.draftNumber = draftNumber;
+    }
+
+    public String getJerseyNumber() {
+        return jerseyNumber;
+    }
+
+    public void setJerseyNumber(String jerseyNumber) {
+        this.jerseyNumber = jerseyNumber;
+    }
+
+    public Integer getGamesPlayed() {
+        return gamesPlayed;
+    }
+
+    public void setGamesPlayed(Integer gamesPlayed) {
+        this.gamesPlayed = gamesPlayed;
+    }
+
+    public Double getMinutesPerGame() {
+        return minutesPerGame;
+    }
+
+    public void setMinutesPerGame(Double minutesPerGame) {
+        this.minutesPerGame = minutesPerGame;
+    }
+
+    public Double getPointsPerGame() {
+        return pointsPerGame;
+    }
+
+    public void setPointsPerGame(Double pointsPerGame) {
+        this.pointsPerGame = pointsPerGame;
+    }
+
+    public Double getReboundsPerGame() {
+        return reboundsPerGame;
+    }
+
+    public void setReboundsPerGame(Double reboundsPerGame) {
+        this.reboundsPerGame = reboundsPerGame;
+    }
+
+    public Double getAssistsPerGame() {
+        return assistsPerGame;
+    }
+
+    public void setAssistsPerGame(Double assistsPerGame) {
+        this.assistsPerGame = assistsPerGame;
+    }
+
+    public Double getStealsPerGame() {
+        return stealsPerGame;
+    }
+
+    public void setStealsPerGame(Double stealsPerGame) {
+        this.stealsPerGame = stealsPerGame;
+    }
+
+    public Double getBlocksPerGame() {
+        return blocksPerGame;
+    }
+
+    public void setBlocksPerGame(Double blocksPerGame) {
+        this.blocksPerGame = blocksPerGame;
+    }
+
+    public Double getFieldGoalPercentage() {
+        return fieldGoalPercentage;
+    }
+
+    public void setFieldGoalPercentage(Double fieldGoalPercentage) {
+        this.fieldGoalPercentage = fieldGoalPercentage;
+    }
+
+    public Double getThreePointPercentage() {
+        return threePointPercentage;
+    }
+
+    public void setThreePointPercentage(Double threePointPercentage) {
+        this.threePointPercentage = threePointPercentage;
+    }
+
+    public Double getFreeThrowPercentage() {
+        return freeThrowPercentage;
+    }
+
+    public void setFreeThrowPercentage(Double freeThrowPercentage) {
+        this.freeThrowPercentage = freeThrowPercentage;
+    }
+
+    public Boolean getIsStarter() {
+        return isStarter;
+    }
+
+    public void setIsStarter(Boolean isStarter) {
+        this.isStarter = isStarter;
+    }
+}

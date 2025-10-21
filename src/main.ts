@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideRouter, RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 import { CategoryLeaderboardsComponent } from './components/category-leaderboards.component';
 import { RecentGamesComponent } from './components/recent-games.component';
@@ -9,14 +10,14 @@ import { StatDetailComponent } from './components/stat-detail.component';
 import { TeamPageComponent } from './components/team-page.component';
 import { PlayerPageComponent } from './components/player-page.component';
 import { GamePageComponent } from './components/game-page.component';
-import { BasketballDataService, ExtendedPlayer } from './services/basketball-data.service';
+import { BasketballDataService, Player, Team } from './services/basketball-data.service';
 import { provideHttpClient } from '@angular/common/http';
 import './global_styles.css';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, CategoryLeaderboardsComponent, RecentGamesComponent, TeamPageComponent, StatDetailComponent, PlayerPageComponent, GamePageComponent],
+  imports: [CommonModule, FormsModule, CategoryLeaderboardsComponent, RecentGamesComponent, TeamPageComponent, StatDetailComponent, PlayerPageComponent, GamePageComponent],
   template: `
     <div class="app-container">
       <header class="header">
@@ -31,6 +32,60 @@ import './global_styles.css';
           </div>
         </div>
       </header>
+
+      <!-- Player Search Bar -->
+      <div class="search-bar-container">
+        <div class="search-bar-wrapper">
+          <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+          <input 
+            type="text" 
+            class="search-input" 
+            placeholder="Search for players..."
+            [(ngModel)]="searchQuery"
+            (input)="onSearchInput()"
+            (focus)="showSearchResults = true"
+            (blur)="onSearchBlur()">
+          <button *ngIf="searchQuery" class="clear-button" (click)="clearSearch()">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        
+        <!-- Search Results Dropdown -->
+        <div class="search-results" *ngIf="showSearchResults && searchQuery && filteredPlayers.length > 0">
+          <div 
+            *ngFor="let player of filteredPlayers.slice(0, 8)" 
+            class="search-result-item"
+            (mousedown)="selectSearchPlayer(player.name)">
+            <div class="player-info">
+              <div class="player-name">{{ player.name }}</div>
+              <div class="player-details">
+                <span class="player-team">{{ player.teamAbbreviation }}</span>
+                <span class="player-position">{{ player.position }}</span>
+                <span class="player-number" *ngIf="player.jerseyNumber">#{{ player.jerseyNumber }}</span>
+              </div>
+            </div>
+            <div class="player-stats">
+              <span class="stat-item">{{ player.points.toFixed(1) }} PPG</span>
+              <span class="stat-item">{{ player.rebounds.toFixed(1) }} RPG</span>
+              <span class="stat-item">{{ player.assists.toFixed(1) }} APG</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- No Results Message -->
+        <div class="search-results no-results" *ngIf="showSearchResults && searchQuery && filteredPlayers.length === 0">
+          <div class="no-results-message">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <p>No players found</p>
+          </div>
+        </div>
+      </div>
 
       <main class="main-content" [style]="backgroundStyle">
         <div class="main-overlay"></div>
@@ -48,7 +103,7 @@ import './global_styles.css';
                  [class.active]="selectedTeam === team"
                  (click)="selectTeam(team)">
               <div class="team-logo">{{ team.abbreviation }}</div>
-              <div class="team-name">{{ team.name }}</div>
+              <div class="team-name">{{ getTeamDisplayName(team) }}</div>
             </div>
           </div>
         </div>
@@ -60,7 +115,7 @@ import './global_styles.css';
             <!-- Show player page when player is selected -->
             <app-player-page *ngIf="selectedPlayer && !selectedGame" [playerName]="selectedPlayer" (back)="clearPlayerSelection()" (viewGameEvent)="viewGame($event)"></app-player-page>
             <!-- Show team page when team is selected -->
-            <app-team-page *ngIf="selectedTeam && !selectedPlayer && !selectedGame" [team]="selectedTeam" (back)="clearSelection()" (viewPlayerEvent)="viewPlayer($event)"></app-team-page>
+            <app-team-page *ngIf="selectedTeam && !selectedPlayer && !selectedGame" [team]="selectedTeam" (back)="clearSelection()" (viewPlayerEvent)="viewPlayer($event)" (viewGameEvent)="viewGame($event)"></app-team-page>
             <!-- Show stat detail when stat is selected -->
             <app-stat-detail *ngIf="selectedStat && !selectedPlayer && !selectedGame" 
               [statKey]="selectedStat!" 
@@ -69,7 +124,7 @@ import './global_styles.css';
               (viewPlayerEvent)="viewPlayer($event)"
               (searchQueryChange)="onStatSearchQueryChange($event)"></app-stat-detail>
             <!-- Show leaderboards when nothing is selected -->
-            <app-category-leaderboards *ngIf="!selectedTeam && !selectedStat && !selectedPlayer && !selectedGame" (viewStat)="viewStat($event)" (viewPlayerEvent)="viewPlayer($event)"></app-category-leaderboards>
+            <app-category-leaderboards *ngIf="!selectedTeam && !selectedStat && !selectedPlayer && !selectedGame" (viewMoreStatsEvent)="viewStat($event)" (viewPlayerEvent)="viewPlayer($event)"></app-category-leaderboards>
           </div>
           <div class="sidebar-area" *ngIf="!selectedTeam && !selectedStat && !selectedPlayer && !selectedGame">
             <app-recent-games (viewGameEvent)="viewGame($event)"></app-recent-games>
@@ -251,6 +306,254 @@ import './global_styles.css';
       margin: 0;
     }
 
+    /* Search Bar Styles */
+    .search-bar-container {
+      background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 20px 0;
+      position: relative;
+      z-index: 1000;
+    }
+
+    .search-bar-wrapper {
+      max-width: 600px;
+      margin: 0 auto;
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 16px;
+      width: 20px;
+      height: 20px;
+      color: #6b7280;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 14px 45px 14px 48px;
+      background: rgba(26, 26, 26, 0.8);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      outline: none;
+    }
+
+    .search-input::placeholder {
+      color: #6b7280;
+    }
+
+    .search-input:focus {
+      border-color: #3b82f6;
+      background: rgba(26, 26, 26, 0.95);
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+
+    .clear-button {
+      position: absolute;
+      right: 12px;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      border-radius: 50%;
+      color: #9ca3af;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      padding: 0;
+    }
+
+    .clear-button:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+    }
+
+    .clear-button svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .search-results {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      max-height: 420px;
+      overflow-y: auto;
+      background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 
+                  0 10px 10px -5px rgba(0, 0, 0, 0.3);
+      z-index: 1001;
+      animation: fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-5px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    }
+
+    .search-result-item {
+      padding: 16px 20px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .search-result-item:last-child {
+      border-bottom: none;
+    }
+
+    .search-result-item:hover {
+      background: rgba(59, 130, 246, 0.1);
+      border-left: 3px solid #3b82f6;
+      padding-left: 17px;
+    }
+
+    .player-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .player-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+
+    .player-details {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .player-team {
+      color: #3b82f6;
+      font-weight: 600;
+    }
+
+    .player-position {
+      color: #9ca3af;
+    }
+
+    .player-number {
+      color: #6b7280;
+    }
+
+    .player-stats {
+      display: flex;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .stat-item {
+      font-size: 12px;
+      color: #9ca3af;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .no-results {
+      padding: 40px 20px;
+    }
+
+    .no-results-message {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      color: #6b7280;
+    }
+
+    .no-results-message svg {
+      width: 48px;
+      height: 48px;
+      opacity: 0.5;
+    }
+
+    .no-results-message p {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .search-results::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .search-results::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+    }
+
+    .search-results::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+    }
+
+    .search-results::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    @media (max-width: 768px) {
+      .search-bar-container {
+        padding: 15px;
+      }
+
+      .search-bar-wrapper {
+        max-width: 100%;
+      }
+
+      .search-results {
+        width: calc(100% - 30px);
+        left: 15px;
+        transform: none;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(-5px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .player-stats {
+        display: none;
+      }
+
+      .search-result-item {
+        padding: 12px 16px;
+      }
+    }
+
     .main-layout {
       display: flex;
       gap: 30px;
@@ -426,10 +729,10 @@ import './global_styles.css';
     }
   `]
 })
-export class HomeComponent {
+export class HomeComponent implements OnInit {
   backgroundStyle: SafeStyle;
-  selectedTeam: any = null;
-  selectedStat: keyof ExtendedPlayer | null = null;
+  selectedTeam: Team | null = null;
+  selectedStat: keyof Player | null = null;
   selectedPlayer: string | null = null;
   selectedGame: any = null;
   carouselOffset: number = 0;
@@ -448,46 +751,91 @@ export class HomeComponent {
   private readonly MAX_NAVIGATION_HISTORY = 17;
   
   statSearchQuery: string = '';
+  teams: Team[] = [];
+  
+  // Player search properties
+  searchQuery: string = '';
+  allPlayers: Player[] = [];
+  filteredPlayers: Player[] = [];
+  showSearchResults: boolean = false;
 
-  teams = [
-    { name: 'Bucks', abbreviation: 'MIL' },
-    { name: 'Bulls', abbreviation: 'CHI' },
-    { name: 'Cavaliers', abbreviation: 'CLE' },
-    { name: 'Celtics', abbreviation: 'BOS' },
-    { name: 'Clippers', abbreviation: 'LAC' },
-    { name: 'Grizzlies', abbreviation: 'MEM' },
-    { name: 'Hawks', abbreviation: 'ATL' },
-    { name: 'Heat', abbreviation: 'MIA' },
-    { name: 'Hornets', abbreviation: 'CHA' },
-    { name: 'Jazz', abbreviation: 'UTA' },
-    { name: 'Kings', abbreviation: 'SAC' },
-    { name: 'Knicks', abbreviation: 'NYK' },
-    { name: 'Lakers', abbreviation: 'LAL' },
-    { name: 'Magic', abbreviation: 'ORL' },
-    { name: 'Mavericks', abbreviation: 'DAL' },
-    { name: 'Nets', abbreviation: 'BKN' },
-    { name: 'Nuggets', abbreviation: 'DEN' },
-    { name: 'Pacers', abbreviation: 'IND' },
-    { name: 'Pelicans', abbreviation: 'NOP' },
-    { name: 'Pistons', abbreviation: 'DET' },
-    { name: 'Raptors', abbreviation: 'TOR' },
-    { name: 'Rockets', abbreviation: 'HOU' },
-    { name: 'Spurs', abbreviation: 'SAS' },
-    { name: 'Suns', abbreviation: 'PHX' },
-    { name: 'Thunder', abbreviation: 'OKC' },
-    { name: 'Timberwolves', abbreviation: 'MIN' },
-    { name: 'Trail Blazers', abbreviation: 'POR' },
-    { name: 'Warriors', abbreviation: 'GSW' },
-    { name: 'Wizards', abbreviation: 'WAS' },
-    { name: '76ers', abbreviation: 'PHI' }
-  ];
-
-  constructor(private sanitizer: DomSanitizer) {
+  constructor(
+    private sanitizer: DomSanitizer,
+    private basketballService: BasketballDataService
+  ) {
     this.backgroundStyle = this.sanitizer.bypassSecurityTrustStyle(
       'background-image: url(assets/basketball-court.png); background-size: cover; background-position: center; background-repeat: no-repeat; position: relative; padding: 40px 0; flex: 1; display: flex; flex-direction: column;'
     );
     // Initialize circular buffer with fixed size
     this.navigationStack = new Array(this.MAX_NAVIGATION_HISTORY).fill(null);
+  }
+
+  ngOnInit() {
+    // Load teams from backend
+    this.basketballService.getAllTeams().subscribe(teams => {
+      // Sort teams alphabetically by name, but put 76ers last for clean UI
+      this.teams = teams.sort((a, b) => {
+        // Check if either team is the 76ers
+        const aIs76ers = a.name.includes('76ers');
+        const bIs76ers = b.name.includes('76ers');
+        
+        // If a is 76ers, it goes after b
+        if (aIs76ers && !bIs76ers) return 1;
+        // If b is 76ers, it goes after a
+        if (!aIs76ers && bIs76ers) return -1;
+        // Otherwise, sort alphabetically
+        return a.name.localeCompare(b.name);
+      });
+    });
+
+    // Load all players for search
+    this.basketballService.getAllPlayers().subscribe(players => {
+      this.allPlayers = players;
+    });
+  }
+
+  onSearchInput() {
+    if (!this.searchQuery.trim()) {
+      this.filteredPlayers = [];
+      return;
+    }
+
+    const query = this.searchQuery.toLowerCase().trim();
+    this.filteredPlayers = this.allPlayers.filter(player => 
+      player.name.toLowerCase().includes(query) ||
+      player.teamName.toLowerCase().includes(query) ||
+      player.teamAbbreviation.toLowerCase().includes(query)
+    ).sort((a, b) => {
+      // Sort by relevance: exact name matches first, then by points
+      const aNameMatch = a.name.toLowerCase().startsWith(query);
+      const bNameMatch = b.name.toLowerCase().startsWith(query);
+      
+      if (aNameMatch && !bNameMatch) return -1;
+      if (!aNameMatch && bNameMatch) return 1;
+      
+      // Then sort by points (best players first)
+      return b.points - a.points;
+    });
+  }
+
+  selectSearchPlayer(playerName: string) {
+    this.searchQuery = '';
+    this.filteredPlayers = [];
+    this.showSearchResults = false;
+    this.viewPlayer(playerName);
+  }
+
+  clearSearch() {
+    this.searchQuery = '';
+    this.filteredPlayers = [];
+    this.showSearchResults = false;
+  }
+
+  onSearchBlur() {
+    // Delay hiding results to allow click events to register
+    setTimeout(() => {
+      this.showSearchResults = false;
+    }, 200);
   }
 
   onCarouselWheel(event: WheelEvent) {
@@ -519,9 +867,9 @@ export class HomeComponent {
     this.touchStartY = 0;
   }
 
-  selectTeam(team: any) {
+  selectTeam(team: Team) {
     // If clicking the same team, clear selection
-    if (this.selectedTeam === team) {
+    if (this.selectedTeam?.id === team.id) {
       this.selectedTeam = null;
     } else {
       // Select the team
@@ -529,11 +877,20 @@ export class HomeComponent {
     }
   }
 
+  getTeamDisplayName(team: Team): string {
+    // Extract just the team name without the city
+    // e.g., "Atlanta Hawks" -> "Hawks", "Los Angeles Lakers" -> "Lakers"
+    if (team.city && team.name.startsWith(team.city)) {
+      return team.name.substring(team.city.length).trim();
+    }
+    return team.name;
+  }
+
   clearSelection() {
     this.selectedTeam = null;
   }
 
-  viewStat(statKey: keyof ExtendedPlayer) {
+  viewStat(statKey: keyof Player) {
     this.selectedStat = statKey;
     this.statSearchQuery = ''; // Reset search when viewing new stat
   }

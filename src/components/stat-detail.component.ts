@@ -1,7 +1,7 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { BasketballDataService, ExtendedPlayer } from '../services/basketball-data.service';
+import { BasketballDataService, Player } from '../services/basketball-data.service';
 
 @Component({
   selector: 'app-stat-detail',
@@ -63,7 +63,7 @@ import { BasketballDataService, ExtendedPlayer } from '../services/basketball-da
                 <td class="player-cell">
                   <div class="player-name">{{ player.name }}</div>
                 </td>
-                <td class="team-cell">{{ player.team }}</td>
+                <td class="team-cell">{{ player.teamAbbreviation }}</td>
                 <td class="position-cell">
                   <span class="position-badge">{{ player.position }}</span>
                 </td>
@@ -81,7 +81,7 @@ import { BasketballDataService, ExtendedPlayer } from '../services/basketball-da
               <div class="rank-badge" [class]="getRankClass(player.originalRank)">{{ player.originalRank + 1 }}</div>
               <div class="mobile-player-info">
                 <div class="player-name">{{ player.name }}</div>
-                <div class="player-meta">{{ player.team }} • {{ player.position }}</div>
+                <div class="player-meta">{{ player.teamAbbreviation }} • {{ player.position }}</div>
               </div>
               <div class="stat-value">{{ formatStatValue(player[statKey]) }}</div>
             </div>
@@ -360,14 +360,14 @@ import { BasketballDataService, ExtendedPlayer } from '../services/basketball-da
   `]
 })
 export class StatDetailComponent implements OnInit {
-  @Input() statKey: keyof ExtendedPlayer = 'points';
+  @Input() statKey: keyof Player = 'points';
   @Input() initialSearchQuery: string = '';
   @Output() back = new EventEmitter<void>();
   @Output() viewPlayerEvent = new EventEmitter<string>();
   @Output() searchQueryChange = new EventEmitter<string>();
   
-  allPlayers: (ExtendedPlayer & { originalRank: number })[] = [];
-  filteredPlayers: (ExtendedPlayer & { originalRank: number })[] = [];
+  allPlayers: (Player & { originalRank: number })[] = [];
+  filteredPlayers: (Player & { originalRank: number })[] = [];
   searchQuery: string = '';
   statFormat: 'number' | 'percentage' = 'number';
 
@@ -382,18 +382,19 @@ export class StatDetailComponent implements OnInit {
   }
 
   loadPlayers() {
-    const players = this.basketballService.getPlayers();
-    this.allPlayers = [...players]
-      .sort((a, b) => {
-        const aValue = a[this.statKey] as number;
-        const bValue = b[this.statKey] as number;
-        return bValue - aValue;
-      })
-      .map((player, index) => ({
-        ...player,
-        originalRank: index
-      }));
-    this.filterPlayers();
+    this.basketballService.getAllPlayers().subscribe(players => {
+      this.allPlayers = [...players]
+        .sort((a, b) => {
+          const aValue = a[this.statKey] as number;
+          const bValue = b[this.statKey] as number;
+          return bValue - aValue;
+        })
+        .map((player, index) => ({
+          ...player,
+          originalRank: index
+        }));
+      this.filterPlayers();
+    });
   }
 
   filterPlayers() {
@@ -404,7 +405,7 @@ export class StatDetailComponent implements OnInit {
     } else {
       this.filteredPlayers = this.allPlayers.filter(player => 
         player.name.toLowerCase().includes(query) ||
-        player.team.toLowerCase().includes(query) ||
+        player.teamAbbreviation.toLowerCase().includes(query) ||
         player.position.toLowerCase().includes(query)
       );
     }
@@ -459,7 +460,7 @@ export class StatDetailComponent implements OnInit {
     return titles[this.statKey] || this.statKey.toString();
   }
 
-  getStatFormat(statKey: keyof ExtendedPlayer): 'number' | 'percentage' {
+  getStatFormat(statKey: keyof Player): 'number' | 'percentage' {
     const percentageStats = [
       'trueShootingPercentage',
       'contestedShotPercentage',

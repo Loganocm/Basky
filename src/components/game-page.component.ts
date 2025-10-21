@@ -1,5 +1,7 @@
 import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { BasketballDataService, Player, BoxScore } from '../services/basketball-data.service';
+import { RecentGame } from '../interfaces/recent-game.interface';
 
 interface GameDetails {
   homeTeam: string;
@@ -10,12 +12,28 @@ interface GameDetails {
   quarter: string;
 }
 
-interface PlayerStats {
-  name: string;
+interface PlayerBoxScore {
+  player: {
+    id: number;
+    name: string;
+    position: string;
+    jerseyNumber: number;
+    isStarter: boolean;
+  };
+  minutes: string;
   points: number;
   rebounds: number;
   assists: number;
-  team: string;
+  steals: number;
+  blocks: number;
+  turnovers: number;
+  fieldGoalsMade: number;
+  fieldGoalsAttempted: number;
+  threePointersMade: number;
+  threePointersAttempted: number;
+  freeThrowsMade: number;
+  freeThrowsAttempted: number;
+  plusMinus: number;
 }
 
 @Component({
@@ -37,43 +55,133 @@ interface PlayerStats {
       <!-- Game Header -->
       <div class="game-header" *ngIf="gameDetails">
         <div class="game-date">{{ gameDetails.date }}</div>
-        <div class="matchup">
-          <div class="team away-team" [class.winner]="gameDetails.awayScore > gameDetails.homeScore">
-            <div class="team-name">{{ gameDetails.awayTeam }}</div>
-            <div class="team-score">{{ gameDetails.awayScore }}</div>
-          </div>
-          <div class="vs">&#64;</div>
-          <div class="team home-team" [class.winner]="gameDetails.homeScore > gameDetails.awayScore">
-            <div class="team-name">{{ gameDetails.homeTeam }}</div>
-            <div class="team-score">{{ gameDetails.homeScore }}</div>
+        <div class="matchup-container">
+          <div class="matchup">
+            <div class="team away-team" [class.winner]="gameDetails.awayScore > gameDetails.homeScore">
+              <div class="team-name">{{ gameDetails.awayTeam }}</div>
+              <div class="team-score">{{ gameDetails.awayScore }}</div>
+            </div>
+            <div class="vs">&#64;</div>
+            <div class="team home-team" [class.winner]="gameDetails.homeScore > gameDetails.awayScore">
+              <div class="team-name">{{ gameDetails.homeTeam }}</div>
+              <div class="team-score">{{ gameDetails.homeScore }}</div>
+            </div>
           </div>
         </div>
         <div class="game-status">{{ gameDetails.quarter }}</div>
       </div>
 
-      <!-- Player Stats -->
-      <div class="stats-section">
-        <h2>Top Performers</h2>
-        <div class="performers-grid">
-          <div *ngFor="let player of topPerformers" class="performer-card" (click)="viewPlayer(player.name)">
-            <div class="performer-header">
-              <div class="performer-name">{{ player.name }}</div>
-              <div class="performer-team">{{ player.team }}</div>
-            </div>
-            <div class="performer-stats">
-              <div class="stat-item">
-                <div class="stat-label">PTS</div>
-                <div class="stat-value">{{ player.points }}</div>
-              </div>
-              <div class="stat-item">
-                <div class="stat-label">REB</div>
-                <div class="stat-value">{{ player.rebounds }}</div>
-              </div>
-              <div class="stat-item">
-                <div class="stat-label">AST</div>
-                <div class="stat-value">{{ player.assists }}</div>
-              </div>
-            </div>
+      <!-- Box Score -->
+      <div class="box-score-section">
+        <h2 class="section-title">Box Score</h2>
+        
+        <!-- Away Team Box Score -->
+        <div class="team-box-score">
+          <div class="team-box-header">
+            <h3>{{ gameDetails?.awayTeam }}</h3>
+            <span class="team-total">{{ gameDetails?.awayScore }}</span>
+          </div>
+          <div class="box-score-table-wrapper">
+            <table class="box-score-table">
+              <thead>
+                <tr>
+                  <th class="player-col">Player</th>
+                  <th>MIN</th>
+                  <th>PTS</th>
+                  <th>REB</th>
+                  <th>AST</th>
+                  <th>STL</th>
+                  <th>BLK</th>
+                  <th>TO</th>
+                  <th>FG</th>
+                  <th>3PT</th>
+                  <th>FT</th>
+                  <th>+/-</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let playerStat of awayTeamBoxScore" 
+                    class="player-stat-row" 
+                    [class.starter-row]="playerStat.player.isStarter"
+                    (click)="viewPlayer(playerStat.player.name)">
+                  <td class="player-name-cell">
+                    <div class="player-name">
+                      {{ playerStat.player.name }}
+                      <span *ngIf="playerStat.player.isStarter" class="starter-badge">★</span>
+                    </div>
+                    <div class="player-position">{{ playerStat.player.position }}</div>
+                  </td>
+                  <td>{{ playerStat.minutes }}</td>
+                  <td class="highlight-stat">{{ playerStat.points }}</td>
+                  <td>{{ playerStat.rebounds }}</td>
+                  <td>{{ playerStat.assists }}</td>
+                  <td>{{ playerStat.steals }}</td>
+                  <td>{{ playerStat.blocks }}</td>
+                  <td>{{ playerStat.turnovers }}</td>
+                  <td>{{ playerStat.fieldGoalsMade }}-{{ playerStat.fieldGoalsAttempted }}</td>
+                  <td>{{ playerStat.threePointersMade }}-{{ playerStat.threePointersAttempted }}</td>
+                  <td>{{ playerStat.freeThrowsMade }}-{{ playerStat.freeThrowsAttempted }}</td>
+                  <td [class.positive]="playerStat.plusMinus > 0" [class.negative]="playerStat.plusMinus < 0">
+                    {{ playerStat.plusMinus > 0 ? '+' : '' }}{{ playerStat.plusMinus }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Home Team Box Score -->
+        <div class="team-box-score">
+          <div class="team-box-header">
+            <h3>{{ gameDetails?.homeTeam }}</h3>
+            <span class="team-total">{{ gameDetails?.homeScore }}</span>
+          </div>
+          <div class="box-score-table-wrapper">
+            <table class="box-score-table">
+              <thead>
+                <tr>
+                  <th class="player-col">Player</th>
+                  <th>MIN</th>
+                  <th>PTS</th>
+                  <th>REB</th>
+                  <th>AST</th>
+                  <th>STL</th>
+                  <th>BLK</th>
+                  <th>TO</th>
+                  <th>FG</th>
+                  <th>3PT</th>
+                  <th>FT</th>
+                  <th>+/-</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let playerStat of homeTeamBoxScore" 
+                    class="player-stat-row" 
+                    [class.starter-row]="playerStat.player.isStarter"
+                    (click)="viewPlayer(playerStat.player.name)">
+                  <td class="player-name-cell">
+                    <div class="player-name">
+                      {{ playerStat.player.name }}
+                      <span *ngIf="playerStat.player.isStarter" class="starter-badge">★</span>
+                    </div>
+                    <div class="player-position">{{ playerStat.player.position }}</div>
+                  </td>
+                  <td>{{ playerStat.minutes }}</td>
+                  <td class="highlight-stat">{{ playerStat.points }}</td>
+                  <td>{{ playerStat.rebounds }}</td>
+                  <td>{{ playerStat.assists }}</td>
+                  <td>{{ playerStat.steals }}</td>
+                  <td>{{ playerStat.blocks }}</td>
+                  <td>{{ playerStat.turnovers }}</td>
+                  <td>{{ playerStat.fieldGoalsMade }}-{{ playerStat.fieldGoalsAttempted }}</td>
+                  <td>{{ playerStat.threePointersMade }}-{{ playerStat.threePointersAttempted }}</td>
+                  <td>{{ playerStat.freeThrowsMade }}-{{ playerStat.freeThrowsAttempted }}</td>
+                  <td [class.positive]="playerStat.plusMinus > 0" [class.negative]="playerStat.plusMinus < 0">
+                    {{ playerStat.plusMinus > 0 ? '+' : '' }}{{ playerStat.plusMinus }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -82,6 +190,7 @@ interface PlayerStats {
   styles: [`
     .game-page-container {
       min-height: 100%;
+      padding-bottom: 40px;
     }
 
     .header {
@@ -134,12 +243,23 @@ interface PlayerStats {
       margin-bottom: 20px;
     }
 
+    .matchup-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
     .matchup {
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 40px;
-      margin-bottom: 20px;
+      background: linear-gradient(135deg, rgba(26, 26, 26, 0.9) 0%, rgba(15, 15, 15, 0.9) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 16px;
+      padding: 32px 48px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(10px);
     }
 
     .team {
@@ -183,84 +303,154 @@ interface PlayerStats {
       font-weight: 600;
     }
 
-    .stats-section {
+    .box-score-section {
       margin-top: 40px;
     }
 
-    .stats-section h2 {
+    .section-title {
       font-size: 24px;
       font-weight: 700;
       color: #ffffff;
-      margin-bottom: 24px;
-    }
-
-    .performers-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 20px;
-    }
-
-    .performer-card {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 12px;
-      padding: 20px;
-      transition: all 0.2s;
-      cursor: pointer;
-    }
-
-    .performer-card:hover {
-      background: rgba(255, 255, 255, 0.08);
-      border-color: rgba(255, 255, 255, 0.2);
-      transform: translateY(-2px);
-    }
-
-    .performer-header {
-      margin-bottom: 16px;
-      padding-bottom: 16px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .performer-name {
-      font-size: 18px;
-      font-weight: 600;
-      color: #ffffff;
-      margin-bottom: 4px;
-    }
-
-    .performer-team {
-      font-size: 14px;
-      color: #3b82f6;
-      font-weight: 600;
-    }
-
-    .performer-stats {
-      display: flex;
-      justify-content: space-around;
-    }
-
-    .stat-item {
+      margin-bottom: 32px;
       text-align: center;
     }
 
-    .stat-label {
-      font-size: 11px;
-      color: #9ca3af;
-      text-transform: uppercase;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      margin-bottom: 4px;
+    .team-box-score {
+      margin-bottom: 40px;
+      background: linear-gradient(135deg, rgba(26, 26, 26, 0.9) 0%, rgba(15, 15, 15, 0.9) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      overflow: hidden;
     }
 
-    .stat-value {
-      font-size: 24px;
+    .team-box-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 24px;
+      background: rgba(59, 130, 246, 0.1);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .team-box-header h3 {
+      font-size: 20px;
       font-weight: 700;
       color: #ffffff;
+      margin: 0;
+    }
+
+    .team-total {
+      font-size: 28px;
+      font-weight: 800;
+      color: #3b82f6;
+    }
+
+    .box-score-table-wrapper {
+      overflow-x: auto;
+    }
+
+    .box-score-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .box-score-table th {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 12px 8px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      white-space: nowrap;
+    }
+
+    .box-score-table th.player-col {
+      text-align: left;
+      padding-left: 24px;
+      min-width: 180px;
+    }
+
+    .box-score-table td {
+      padding: 14px 8px;
+      text-align: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: #d1d5db;
+    }
+
+    .player-stat-row {
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .player-stat-row:hover {
+      background: rgba(59, 130, 246, 0.08);
+    }
+
+    .starter-row {
+      background: rgba(251, 191, 36, 0.08);
+      border-left: 3px solid #fbbf24;
+    }
+
+    .starter-row:hover {
+      background: rgba(251, 191, 36, 0.15);
+    }
+
+    .player-name-cell {
+      text-align: left !important;
+      padding-left: 24px !important;
+    }
+
+    .player-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: #ffffff;
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .starter-badge {
+      color: #fbbf24;
+      font-size: 12px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    .player-position {
+      font-size: 11px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+
+    .highlight-stat {
+      font-weight: 700;
+      color: #ffffff;
+      font-size: 14px;
+    }
+
+    .positive {
+      color: #22c55e;
+      font-weight: 600;
+    }
+
+    .negative {
+      color: #ef4444;
+      font-weight: 600;
     }
 
     @media (max-width: 768px) {
       .matchup {
         gap: 20px;
+        padding: 24px 32px;
       }
 
       .team-name {
@@ -271,47 +461,139 @@ interface PlayerStats {
         font-size: 36px;
       }
 
-      .performers-grid {
-        grid-template-columns: 1fr;
+      .box-score-table {
+        font-size: 11px;
+      }
+
+      .box-score-table th,
+      .box-score-table td {
+        padding: 10px 6px;
+      }
+
+      .team-box-header {
+        padding: 16px 20px;
+      }
+
+      .team-total {
+        font-size: 24px;
       }
     }
   `]
 })
 export class GamePageComponent implements OnInit {
-  @Input() gameId: string = '';
+  @Input() gameId: RecentGame | null = null;
   @Output() back = new EventEmitter<void>();
   @Output() viewPlayerEvent = new EventEmitter<string>();
 
   gameDetails: GameDetails | null = null;
-  topPerformers: PlayerStats[] = [];
+  homeTeamBoxScore: PlayerBoxScore[] = [];
+  awayTeamBoxScore: PlayerBoxScore[] = [];
+
+  constructor(private basketballService: BasketballDataService) {}
 
   ngOnInit() {
     this.loadGameData();
   }
 
   loadGameData() {
-    // Mock game data
+    if (!this.gameId) return;
+
+    // Set game details first
     this.gameDetails = {
-      homeTeam: 'LAL',
-      awayTeam: 'GSW',
-      homeScore: 112,
-      awayScore: 108,
-      date: new Date().toLocaleDateString('en-US', { 
-        weekday: 'long',
-        month: 'long', 
-        day: 'numeric',
-        year: 'numeric'
-      }),
+      homeTeam: this.gameId!.homeTeamAbbreviation || this.gameId!.homeTeamName,
+      awayTeam: this.gameId!.awayTeamAbbreviation || this.gameId!.awayTeamName,
+      homeScore: this.gameId!.homeScore,
+      awayScore: this.gameId!.awayScore,
+      date: this.formatGameDate(this.gameId!.gameDate),
       quarter: 'Final'
     };
 
-    // Mock top performers
-    this.topPerformers = [
-      { name: 'LeBron James', points: 32, rebounds: 8, assists: 11, team: 'LAL' },
-      { name: 'Stephen Curry', points: 28, rebounds: 5, assists: 7, team: 'GSW' },
-      { name: 'Anthony Davis', points: 24, rebounds: 12, assists: 4, team: 'LAL' },
-      { name: 'Klay Thompson', points: 22, rebounds: 3, assists: 3, team: 'GSW' }
-    ];
+    // Fetch real box scores from the database
+    this.basketballService.getBoxScoresByGame(this.gameId!.id).subscribe(boxScores => {
+      // Get all players to enrich box score data
+      this.basketballService.getAllPlayers().subscribe(players => {
+        // Create a player map for quick lookup
+        const playerMap = new Map(players.map(p => [p.id, p]));
+
+        // Transform box scores to PlayerBoxScore format
+        const allPlayerBoxScores = boxScores.map(bs => {
+          const player = playerMap.get(bs.playerId);
+          return {
+            player: {
+              id: bs.playerId,
+              name: bs.playerName,
+              position: player?.position || 'N/A',
+              jerseyNumber: player?.jerseyNumber || 0,
+              isStarter: bs.isStarter
+            },
+            minutes: bs.minutesPlayed,
+            points: bs.points,
+            rebounds: bs.rebounds,
+            assists: bs.assists,
+            steals: bs.steals,
+            blocks: bs.blocks,
+            turnovers: bs.turnovers,
+            fieldGoalsMade: bs.fieldGoalsMade,
+            fieldGoalsAttempted: bs.fieldGoalsAttempted,
+            threePointersMade: bs.threePointersMade,
+            threePointersAttempted: bs.threePointersAttempted,
+            freeThrowsMade: bs.freeThrowsMade,
+            freeThrowsAttempted: bs.freeThrowsAttempted,
+            plusMinus: bs.plusMinus
+          };
+        });
+
+        // Get home and away team IDs from the game data
+        const homeTeamId = this.gameId!.homeTeamId;
+        const awayTeamId = this.gameId!.awayTeamId;
+
+        // Split box scores by team
+        this.homeTeamBoxScore = allPlayerBoxScores.filter(pbs => {
+          const boxScore = boxScores.find(bs => bs.playerId === pbs.player.id);
+          return boxScore?.teamId === homeTeamId;
+        });
+
+        this.awayTeamBoxScore = allPlayerBoxScores.filter(pbs => {
+          const boxScore = boxScores.find(bs => bs.playerId === pbs.player.id);
+          return boxScore?.teamId === awayTeamId;
+        });
+
+        // Sort starters first, then by minutes played
+        const sortBoxScores = (scores: PlayerBoxScore[]) => {
+          return scores.sort((a, b) => {
+            if (a.player.isStarter !== b.player.isStarter) {
+              return a.player.isStarter ? -1 : 1;
+            }
+            const aMinutes = this.parseMinutes(a.minutes);
+            const bMinutes = this.parseMinutes(b.minutes);
+            return bMinutes - aMinutes;
+          });
+        };
+
+        this.homeTeamBoxScore = sortBoxScores(this.homeTeamBoxScore);
+        this.awayTeamBoxScore = sortBoxScores(this.awayTeamBoxScore);
+      });
+    });
+  }
+
+  parseMinutes(minutesStr: string): number {
+    if (!minutesStr) return 0;
+    const parts = minutesStr.split(':');
+    return parseInt(parts[0]) || 0;
+  }
+
+  formatGameDate(dateString: string): string {
+    // Parse date string (format: "YYYY-MM-DD") correctly
+    // Split the date to avoid timezone issues
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day); // month is 0-indexed in JS
+    
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'long',
+      month: 'long', 
+      day: 'numeric',
+      year: 'numeric'
+    });
   }
 
   goBack() {

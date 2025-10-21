@@ -1,9 +1,12 @@
 export interface RecentGame {
   id: number;
-  homeTeam: string;
-  awayTeam: string;
+  homeTeamId: number;
+  homeTeamName: string;
+  homeTeamAbbreviation: string;
+  awayTeamId: number;
+  awayTeamName: string;
+  awayTeamAbbreviation: string;
   homeScore: number;
   awayScore: number;
-  date: Date;
-  status: string;
+  gameDate: string;
 }

@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Player } from './player-card.component';
+import { Player } from '../services/basketball-data.service';
 
 @Component({
   selector: 'app-stats-matrix',
@@ -29,7 +29,7 @@ import { Player } from './player-card.component';
             <!-- Player Info -->
             <div class="col-span-2">
               <div class="font-bold text-white text-sm">{{ player.name }}</div>
-              <div class="text-xs text-gray-400">{{ player.team }} • {{ player.position }}</div>
+              <div class="text-xs text-gray-400">{{ player.teamAbbreviation }} • {{ player.position }}</div>
             </div>
 
             <!-- Offense Stats -->
@@ -103,20 +103,20 @@ import { Player } from './player-card.component';
                 <div class="stat-label">TS%</div>
               </div>
               <div class="stat-cell">
-                <div class="stat-value text-purple-400">{{ player.boxPlusMinus > 0 ? '+' : '' }}{{ player.boxPlusMinus }}</div>
-                <div class="stat-label">BPM</div>
+                <div class="stat-value text-purple-400">{{ player.plusMinus > 0 ? '+' : '' }}{{ player.plusMinus }}</div>
+                <div class="stat-label">+/-</div>
               </div>
               <div class="stat-cell">
-                <div class="stat-value text-purple-400">{{ player.winShares }}</div>
-                <div class="stat-label">WS</div>
+                <div class="stat-value text-purple-400">{{ player.efficiencyRating }}</div>
+                <div class="stat-label">EFF</div>
               </div>
             </div>
 
             <!-- Advanced Stats -->
             <div class="col-span-2 grid grid-cols-2 gap-1 text-center">
               <div class="stat-cell">
-                <div class="stat-value text-yellow-400">{{ player.valueOverReplacement }}</div>
-                <div class="stat-label">VORP</div>
+                <div class="stat-value text-yellow-400">{{ player.impactScore }}</div>
+                <div class="stat-label">IMP</div>
               </div>
               <div class="stat-cell">
                 <div class="stat-value text-yellow-400">{{ (player.effectiveFieldGoalPercentage * 100).toFixed(0) }}</div>
