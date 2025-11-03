@@ -1,0 +1,69 @@
+# ============================================
+# Supabase Configuration
+# ============================================
+
+# Supabase Project URL
+supabase.url=https://YOUR_PROJECT_REF.supabase.co
+
+# Supabase Service Role Key (for backend-to-backend communication)
+# IMPORTANT: Keep this secret! Use environment variables in production
+supabase.service-role-key=${SUPABASE_SERVICE_ROLE_KEY:your-service-role-key-here}
+
+# Supabase Anonymous Key (for public operations)
+supabase.anon-key=${SUPABASE_ANON_KEY:your-anon-key-here}
+
+# Auto-sync on application startup (true/false)
+# WARNING: Set to false in production if you use scheduled jobs
+supabase.auto-sync-on-startup=false
+
+# Auto-sync when database is empty (true/false)
+# Recommended: true for first deployment, false after initial load
+supabase.auto-sync-when-empty=true
+
+# Function timeout in milliseconds (default: 5 minutes)
+supabase.function-timeout-ms=300000
+
+# ============================================
+# Database Configuration (Supabase PostgreSQL)
+# ============================================
+
+# Supabase Database Connection
+spring.datasource.url=jdbc:postgresql://aws-0-us-east-1.pooler.supabase.com:5432/postgres
+spring.datasource.username=${SUPABASE_DB_USER:postgres}
+spring.datasource.password=${SUPABASE_DB_PASSWORD:your-db-password}
+
+# Connection Pool Settings
+spring.datasource.hikari.maximum-pool-size=10
+spring.datasource.hikari.minimum-idle=5
+spring.datasource.hikari.idle-timeout=300000
+spring.datasource.hikari.connection-timeout=20000
+
+# JPA/Hibernate Settings
+spring.jpa.hibernate.ddl-auto=validate
+spring.jpa.show-sql=false
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.PostgreSQLDialect
+spring.jpa.properties.hibernate.format_sql=true
+
+# ============================================
+# Application Settings
+# ============================================
+
+# Server Port (Azure will set this via environment variable)
+server.port=${PORT:8080}
+
+# Application Name
+spring.application.name=Basky NBA Stats API
+
+# Actuator Endpoints (for health checks)
+management.endpoints.web.exposure.include=health,info
+management.endpoint.health.show-details=always
+
+# ============================================
+# Logging
+# ============================================
+
+logging.level.root=INFO
+logging.level.com.nba.baskyapp=INFO
+logging.level.com.nba.baskyapp.service.SupabaseFunctionService=DEBUG
+logging.level.org.springframework.web=INFO
+logging.level.org.hibernate.SQL=DEBUG

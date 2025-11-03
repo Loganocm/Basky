@@ -1,0 +1,127 @@
+name: Deploy to Azure
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Deployment environment"
+        required: true
+        default: "production"
+        type: choice
+        options:
+          - production
+          - staging
+
+env:
+  AZURE_RESOURCE_GROUP: basky-rg
+  AZURE_LOCATION: eastus
+  AZURE_CONTAINER_REGISTRY: baskyacr
+  BACKEND_IMAGE: basky-backend
+  FRONTEND_IMAGE: basky-frontend
+
+jobs:
+  deploy:
+    name: Deploy to Azure Container Apps
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Azure Container Registry
+        run: |
+          az acr login --name ${{ env.AZURE_CONTAINER_REGISTRY }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./baskyapp
+          file: ./baskyapp/Dockerfile
+          push: true
+          tags: |
+            ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.BACKEND_IMAGE }}:latest
+            ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.frontend
+          push: true
+          tags: |
+            ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.FRONTEND_IMAGE }}:latest
+            ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            API_URL=${{ secrets.BACKEND_URL }}
+
+      - name: Deploy backend to Azure Container Apps
+        run: |
+          az containerapp update \
+            --name basky-backend \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.BACKEND_IMAGE }}:${{ github.sha }} \
+            --set-env-vars \
+              SPRING_DATASOURCE_URL=secretref:db-url \
+              SPRING_DATASOURCE_USERNAME=secretref:db-username \
+              SPRING_DATASOURCE_PASSWORD=secretref:db-password
+
+      - name: Deploy frontend to Azure Container Apps
+        run: |
+          az containerapp update \
+            --name basky-frontend \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --image ${{ env.AZURE_CONTAINER_REGISTRY }}.azurecr.io/${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+
+      - name: Get application URLs
+        id: get-urls
+        run: |
+          BACKEND_URL=$(az containerapp show \
+            --name basky-backend \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query properties.configuration.ingress.fqdn \
+            --output tsv)
+
+          FRONTEND_URL=$(az containerapp show \
+            --name basky-frontend \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query properties.configuration.ingress.fqdn \
+            --output tsv)
+
+          echo "backend_url=https://$BACKEND_URL" >> $GITHUB_OUTPUT
+          echo "frontend_url=https://$FRONTEND_URL" >> $GITHUB_OUTPUT
+
+      - name: Verify deployment
+        run: |
+          echo "Verifying backend health..."
+          curl -f ${{ steps.get-urls.outputs.backend_url }}/actuator/health || exit 1
+
+          echo "Verifying frontend..."
+          curl -f ${{ steps.get-urls.outputs.frontend_url }} || exit 1
+
+      - name: Post deployment summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Deployment completed successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Application URLs" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontend**: ${{ steps.get-urls.outputs.frontend_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend API**: ${{ steps.get-urls.outputs.backend_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Backend Health**: ${{ steps.get-urls.outputs.backend_url }}/actuator/health" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Image Tags" >> $GITHUB_STEP_SUMMARY
+          echo "- Backend: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Frontend: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY

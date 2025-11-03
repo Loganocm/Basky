@@ -1,4 +1,121 @@
-.angular
-dist
-node_modules
+# Environment files
 .env
+.env.local
+.env.production
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+*.local
+
+# Angular
+.angular/
+.angular-cli.json
+
+# IDEs and editors
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Java / Maven
+baskyapp/target/
+baskyapp/.mvn/wrapper/maven-wrapper.jar
+baskyapp/.mvn/wrapper/maven-wrapper.properties
+baskyapp/mvnw
+baskyapp/mvnw.cmd
+*.class
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+hs_err_pid*
+
+# Spring Boot
+baskyapp/.gradle/
+baskyapp/.gradle
+baskyapp/gradle/
+baskyapp/gradlew
+baskyapp/gradlew.bat
+
+# Python
+utilities/__pycache__/
+utilities/*.pyc
+utilities/*.pyo
+utilities/*.pyd
+utilities/.Python
+utilities/env/
+utilities/venv/
+utilities/ENV/
+utilities/.venv
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker
+.dockerignore.backup
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.cache/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Backup files
+*.bak
+*.backup
+
+# Azure specific (if storing credentials locally - DON'T!)
+# azure-credentials.json
+
+# Package manager locks (optional - comment out if you want to commit them)
+# package-lock.json
+# yarn.lock
+
+# Compiled source
+*.com
+*.dll
+*.exe
+*.o
+*.so
