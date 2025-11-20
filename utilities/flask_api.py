@@ -9,6 +9,17 @@ from flask_cors import CORS
 import logging
 import os
 
+# Configure environment variables for database connection
+# These should match what's in nba_scrape_to_postgres.py
+if not os.environ.get("DB_HOST"):
+    # Set defaults if not already set
+    os.environ.setdefault("DB_NAME", "postgres")
+    os.environ.setdefault("DB_USER", "postgres.hbsdjlaogfdcjlghjuct")
+    os.environ.setdefault("DB_HOST", "aws-1-us-east-1.pooler.supabase.com")
+    os.environ.setdefault("DB_PORT", "5432")
+    os.environ.setdefault("DB_SSLMODE", "require")
+    # DB_PASSWORD must be set in environment or .env file for security
+
 # Import your EXACT existing scraper function - NO LOGIC CHANGES
 from nba_scrape_to_postgres import scrape_and_store, get_connection
 

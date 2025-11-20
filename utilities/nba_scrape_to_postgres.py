@@ -10,11 +10,14 @@ from nba_api.stats.static import teams, players
 # ----------------------------------------------------------------------
 # CONFIGURATION
 # ----------------------------------------------------------------------
-DB_NAME = "nba_stats_db"
-DB_USER = "postgres"
-DB_PASSWORD = "1738"  # TODO: replace with your actual password
-DB_HOST = "localhost"
-DB_PORT = "5432"
+import os
+
+DB_NAME = os.environ.get("DB_NAME", "postgres")
+DB_USER = os.environ.get("DB_USER", "postgres.hbsdjlaogfdcjlghjuct")
+DB_PASSWORD = os.environ.get("DB_PASSWORD", "1738")  # TODO: replace with your actual password
+DB_HOST = os.environ.get("DB_HOST", "aws-1-us-east-1.pooler.supabase.com")
+DB_PORT = os.environ.get("DB_PORT", "5432")
+DB_SSLMODE = os.environ.get("DB_SSLMODE", "require")  # Supabase requires SSL
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("nba_scraper")
@@ -58,9 +61,12 @@ def get_connection():
             password=DB_PASSWORD,
             host=DB_HOST,
             port=DB_PORT,
+            sslmode=DB_SSLMODE,
+            connect_timeout=10
         )
     except psycopg2.Error as e:
         logger.error(f"Database connection failed: {e}")
+        logger.error(f"Connection details: host={DB_HOST}, port={DB_PORT}, dbname={DB_NAME}, user={DB_USER}, sslmode={DB_SSLMODE}")
         raise
 
 # ----------------------------------------------------------------------

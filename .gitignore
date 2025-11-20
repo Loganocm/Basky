@@ -1,8 +1,8 @@
 # Environment files
 .env
-.env.example
 .env.local
 .env.production
+# Keep .env.example as a template (it has no secrets)
 
 # Logs
 logs

@@ -83,7 +83,9 @@ export interface BoxScore {
 
 @Injectable({ providedIn: 'root' })
 export class BasketballDataService {
-  private readonly baseUrl = 'http://localhost:8080/api';
+  private readonly baseUrl = window.location.hostname === 'localhost' 
+    ? 'http://localhost:8080/api' 
+    : 'http://13.59.211.131:8080/api';
   constructor(private http: HttpClient) {}
   // Player endpoints
   getAllPlayers(): Observable<Player[]> { 

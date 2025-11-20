@@ -16,7 +16,12 @@ public class CorsConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-                .allowedOrigins("http://localhost:4200", "http://localhost:3000", "http://localhost:5173")
+                .allowedOrigins(
+                        "http://localhost:4200",
+                        "http://localhost:3000",
+                        "http://localhost:5173",
+                        "https://*.vercel.app" // Allow all Vercel preview/production deployments
+                )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);
@@ -25,10 +30,8 @@ public class CorsConfig implements WebMvcConfigurer {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        // Use setAllowedOrigins with specific origins instead of patterns when using
-        // credentials
-        configuration.setAllowedOrigins(
-                Arrays.asList("http://localhost:4200", "http://localhost:3000", "http://localhost:5173"));
+        configuration.setAllowedOriginPatterns(
+                Arrays.asList("http://localhost:*", "https://*.vercel.app"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
