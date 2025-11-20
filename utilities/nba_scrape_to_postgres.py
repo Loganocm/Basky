@@ -371,7 +371,7 @@ def get_team_standings(season_year):
     season_str = f"{season_year-1}-{str(season_year)[-2:]}"
     logger.info(f"Fetching standings for season {season_str}...")
     
-    standings = leaguestandings.LeagueStandings(season=season_str)
+    standings = leaguestandings.LeagueStandings(season=season_str, timeout=120)
     standings_df = standings.get_data_frames()[0]
     
     # Get team abbreviations from static teams - this has the CORRECT abbreviations
@@ -434,7 +434,8 @@ def get_player_positions(season_year, player_ids_dict=None):
             
             roster = commonteamroster.CommonTeamRoster(
                 season=season_str,
-                team_id=team['id']
+                team_id=team['id'],
+                timeout=120
             )
             roster_df = roster.get_data_frames()[0]
             
@@ -475,7 +476,7 @@ def get_player_positions(season_year, player_ids_dict=None):
             if player_name not in player_positions:
                 try:
                     time.sleep(0.6)  # Rate limiting
-                    player_info = commonplayerinfo.CommonPlayerInfo(player_id=player_id)
+                    player_info = commonplayerinfo.CommonPlayerInfo(player_id=player_id, timeout=120)
                     info_df = player_info.get_data_frames()[0]
                     
                     if not info_df.empty:
@@ -518,7 +519,8 @@ def get_all_players_info(season_year, conn):
         player_stats = leaguedashplayerstats.LeagueDashPlayerStats(
             season=season_str,
             season_type_all_star='Regular Season',
-            per_mode_detailed='PerGame'
+            per_mode_detailed='PerGame',
+            timeout=120
         )
         stats_df = player_stats.get_data_frames()[0]
         
@@ -678,7 +680,8 @@ def get_recent_games(season_year, conn, limit=None):
         # Use LeagueGameFinder to get games
         game_finder = leaguegamefinder.LeagueGameFinder(
             season_nullable=season_str,
-            season_type_nullable='Regular Season'
+            season_type_nullable='Regular Season',
+            timeout=120
         )
         games_df = game_finder.get_data_frames()[0]
         
@@ -766,7 +769,7 @@ def get_box_scores_for_game(nba_game_id, db_game_id, conn, max_retries=3):
             
             box_score = boxscoretraditionalv2.BoxScoreTraditionalV2(
                 game_id=nba_game_id,
-                timeout=45  # Increased timeout
+                timeout=120
             )
             player_stats = box_score.get_data_frames()[0]
             
@@ -862,7 +865,8 @@ def update_starter_status(conn, season_year, num_games=50):
         season_str = f"{season_year-1}-{str(season_year)[-2:]}"
         game_finder = leaguegamefinder.LeagueGameFinder(
             season_nullable=season_str,
-            season_type_nullable='Regular Season'
+            season_type_nullable='Regular Season',
+            timeout=120
         )
         games_df = game_finder.get_data_frames()[0]
         
@@ -887,7 +891,7 @@ def update_starter_status(conn, season_year, num_games=50):
                     time.sleep(0.6)
                 
                 # Fetch boxscore
-                boxscore = boxscoretraditionalv2.BoxScoreTraditionalV2(game_id=game_id)
+                boxscore = boxscoretraditionalv2.BoxScoreTraditionalV2(game_id=game_id, timeout=120)
                 player_stats = boxscore.get_data_frames()[0]
                 
                 if player_stats.empty:
