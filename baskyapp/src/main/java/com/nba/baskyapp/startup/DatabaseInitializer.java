@@ -1,17 +1,22 @@
 package com.nba.baskyapp.startup;
 
-import com.nba.baskyapp.config.SupabaseProperties;
-import com.nba.baskyapp.service.SupabaseFunctionService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
 
 /**
- * Checks database status on application startup and triggers data sync if
+ * Checks database status on application startup and triggers Python scraper if
  * needed
  */
 @Component
@@ -22,14 +27,13 @@ public class DatabaseInitializer {
     @PersistenceContext
     private EntityManager entityManager;
 
-    private final SupabaseFunctionService supabaseFunctionService;
-    private final SupabaseProperties supabaseProperties;
+    private final RestTemplate restTemplate = new RestTemplate();
 
-    public DatabaseInitializer(SupabaseFunctionService supabaseFunctionService,
-            SupabaseProperties supabaseProperties) {
-        this.supabaseFunctionService = supabaseFunctionService;
-        this.supabaseProperties = supabaseProperties;
-    }
+    @Value("${nba.scraper.url:http://localhost:5000/api/nba}")
+    private String scraperUrl;
+
+    @Value("${nba.scraper.auto-sync:true}")
+    private boolean autoSync;
 
     /**
      * Called when the application is fully started and ready
@@ -38,41 +42,57 @@ public class DatabaseInitializer {
     public void onApplicationReady() {
         logger.info("Application ready - checking database status...");
 
-        // Check if auto-sync is enabled
-        if (!supabaseProperties.isAutoSyncOnStartup() && !supabaseProperties.isAutoSyncWhenEmpty()) {
-            logger.info("Auto-sync is disabled in configuration");
+        if (!autoSync) {
+            logger.info("Auto-sync is disabled");
             return;
         }
 
         try {
-            // Check team count (indicator of database state)
             Long teamCount = getTeamCount();
             logger.info("Current team count: {}", teamCount);
 
-            // If database is empty and auto-sync is enabled, trigger sync
-            if (supabaseProperties.isAutoSyncWhenEmpty()) {
-                boolean synced = supabaseFunctionService.syncIfEmpty(teamCount);
-                if (synced) {
-                    logger.info("✅ Initial database sync completed");
-                } else {
-                    logger.info("Database sync not needed or disabled");
-                }
-            }
-
-            // If auto-sync on startup is enabled (regardless of database state)
-            if (supabaseProperties.isAutoSyncOnStartup() && teamCount > 0) {
-                logger.info("Auto-sync on startup is enabled, triggering data refresh...");
-                SupabaseFunctionService.FunctionResponse response = supabaseFunctionService.triggerDataSync();
-                if (response.isSuccess()) {
-                    logger.info("✅ Startup data sync completed");
-                } else {
-                    logger.warn("⚠️ Startup data sync failed: {}", response.getError());
-                }
+            // If database is empty, trigger Python scraper
+            if (teamCount == 0) {
+                logger.info("Database is empty, triggering Python scraper...");
+                triggerPythonScraper();
+            } else {
+                logger.info("Database already populated ({} teams)", teamCount);
             }
 
         } catch (Exception e) {
-            logger.error("Error during database initialization check", e);
-            // Don't fail startup - just log the error
+            logger.error("Error during database initialization", e);
+            // Don't fail startup
+        }
+    }
+
+    /**
+     * Trigger the Python Flask API to run the scraper
+     */
+    private void triggerPythonScraper() {
+        try {
+            String syncUrl = scraperUrl + "/sync";
+            logger.info("Calling Python scraper at: {}", syncUrl);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<String> request = new HttpEntity<>(headers);
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    syncUrl,
+                    HttpMethod.POST,
+                    request,
+                    String.class);
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                logger.info("✅ Python scraper completed successfully");
+                logger.debug("Response: {}", response.getBody());
+            } else {
+                logger.warn("⚠️ Python scraper returned status: {}", response.getStatusCode());
+            }
+
+        } catch (Exception e) {
+            logger.error("❌ Failed to trigger Python scraper: {}", e.getMessage());
+            logger.error("Make sure Flask API is running at: {}", scraperUrl);
         }
     }
 
