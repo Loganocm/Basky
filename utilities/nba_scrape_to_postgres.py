@@ -16,7 +16,7 @@ DB_NAME = os.environ.get("DB_NAME", "postgres")
 DB_USER = os.environ.get("DB_USER", "postgres.hbsdjlaogfdcjlghjuct")
 DB_PASSWORD = os.environ.get("DB_PASSWORD", "NuUnmn301cHHAU0F")
 # Direct connection (non-pooler) - best for long-running operations
-DB_HOST = os.environ.get("DB_HOST", "aws-1-us-east-1.postgres.supabase.com")
+DB_HOST = os.environ.get("DB_HOST", "db.hbsdjlaogfdcjlghjuct.supabase.co")
 DB_PORT = os.environ.get("DB_PORT", "5432")
 DB_SSLMODE = os.environ.get("DB_SSLMODE", "require")  # Supabase requires SSL
 
