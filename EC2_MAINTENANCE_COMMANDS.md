@@ -75,8 +75,6 @@ docker logs -f basky-frontend
 
 ## Flask API (NBA Data Scraper)
 
-## Flask API (NBA Data Scraper)
-
 ### Pull Latest Code from GitHub
 
 ```bash
@@ -118,6 +116,33 @@ tail -f /home/ec2-user/Basky/utilities/flask_api.log
 ```
 
 ### Check Flask Status
+
+```bash
+ps aux | grep flask_api.py | grep -v grep
+curl http://localhost:5000/api/nba/status
+```
+
+### Trigger NBA Data Sync (Background)
+
+```bash
+# Start sync (runs in background, returns immediately)
+curl -X POST http://localhost:5000/api/nba/sync
+
+# Check sync progress
+curl http://localhost:5000/api/nba/sync/status
+
+# Watch logs in real-time
+tail -f /home/ec2-user/Basky/utilities/flask_api.log
+```
+
+### Run Initial Data Load (Direct - First Time Setup)
+
+```bash
+# For first-time setup or if API sync has issues
+# This runs directly and takes 10-15 minutes
+cd /home/ec2-user/Basky/utilities
+python3 nba_scrape_to_postgres.py
+```
 
 ```bash
 ps aux | grep flask_api.py | grep -v grep

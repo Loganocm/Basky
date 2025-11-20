@@ -9,6 +9,8 @@ from flask_cors import CORS
 import logging
 import os
 from dotenv import load_dotenv
+import threading
+from datetime import datetime
 
 # Load environment variables from .env file
 load_dotenv()
@@ -36,6 +38,34 @@ logging.basicConfig(
 )
 logger = logging.getLogger("nba_api")
 
+# Track sync status
+sync_status = {
+    "is_running": False,
+    "last_sync": None,
+    "last_error": None,
+    "last_success": None
+}
+
+def run_sync_background():
+    """Run sync in background thread"""
+    global sync_status
+    try:
+        sync_status["is_running"] = True
+        sync_status["last_error"] = None
+        logger.info("🚀 Background sync started")
+        
+        scrape_and_store()
+        
+        sync_status["last_success"] = datetime.now().isoformat()
+        logger.info("✅ Background sync completed successfully")
+        
+    except Exception as e:
+        sync_status["last_error"] = str(e)
+        logger.error(f"❌ Background sync failed: {e}")
+    finally:
+        sync_status["is_running"] = False
+        sync_status["last_sync"] = datetime.now().isoformat()
+
 
 @app.route('/health', methods=['GET'])
 def health():
@@ -46,27 +76,45 @@ def health():
 @app.route('/api/nba/sync', methods=['POST'])
 def sync():
     """
-    Trigger NBA data sync
+    Trigger NBA data sync (runs in background)
     Your Java backend calls this: POST http://localhost:5000/api/nba/sync
     """
+    global sync_status
+    
+    if sync_status["is_running"]:
+        return jsonify({
+            "success": False,
+            "message": "Sync already in progress",
+            "status": sync_status
+        }), 409
+    
     try:
-        logger.info("🚀 Sync triggered")
+        # Start sync in background thread
+        thread = threading.Thread(target=run_sync_background, daemon=True)
+        thread.start()
         
-        # Call your EXACT function - ZERO CHANGES
-        scrape_and_store()
-        
-        logger.info("✅ Sync completed")
+        logger.info("🚀 Sync triggered (running in background)")
         return jsonify({
             "success": True,
-            "message": "NBA data sync completed"
-        }), 200
+            "message": "NBA data sync started in background. Check /api/nba/sync/status for progress.",
+            "status": sync_status
+        }), 202  # 202 Accepted
         
     except Exception as e:
-        logger.error(f"❌ Sync failed: {e}")
+        logger.error(f"❌ Failed to start sync: {e}")
         return jsonify({
             "success": False,
             "error": str(e)
         }), 500
+
+
+@app.route('/api/nba/sync/status', methods=['GET'])
+def sync_status_endpoint():
+    """Check sync status"""
+    return jsonify({
+        "success": True,
+        "status": sync_status
+    }), 200
 
 
 @app.route('/api/nba/status', methods=['GET'])
