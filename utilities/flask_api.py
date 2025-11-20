@@ -8,6 +8,10 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 import logging
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure environment variables for database connection
 # These should match what's in nba_scrape_to_postgres.py
