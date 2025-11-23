@@ -13,7 +13,7 @@ from nba_api.stats.static import teams, players
 import os
 
 DB_NAME = os.environ.get("DB_NAME", "postgres")
-DB_USER = os.environ.get("DB_USER", "postgres.hbsdjlaogfdcjlghjuct")
+DB_USER = os.environ.get("DB_USER", "postgres")  # Direct connection uses 'postgres'
 DB_PASSWORD = os.environ.get("DB_PASSWORD", "NuUnmn301cHHAU0F")
 # Direct connection (non-pooler) - best for long-running operations
 DB_HOST = os.environ.get("DB_HOST", "db.hbsdjlaogfdcjlghjuct.supabase.co")

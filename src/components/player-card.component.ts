@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Player } from '../services/basketball-data.service';
+import { Player } from '../models/player.model';
 
 @Component({
   selector: 'app-player-card',

@@ -1,91 +1,15 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { TeamStats } from '../components/team-overview.component';
-import { RecentGame } from '../interfaces/recent-game.interface';
-
-export interface Team {
-  id: number;
-  name: string;
-  city: string;
-  abbreviation: string;
-}
-
-export interface Player {
-  id: number;
-  name: string;
-  position: string;
-  jerseyNumber: number;
-  teamId: number;
-  teamName: string;
-  teamCity: string;
-  teamAbbreviation: string;
-  isStarter: boolean;
-  gamesPlayed: number;
-  minutesPerGame: number;
-  points: number;
-  rebounds: number;
-  assists: number;
-  steals: number;
-  blocks: number;
-  turnovers: number;
-  fieldGoalPercentage: number;
-  threePointPercentage: number;
-  freeThrowPercentage: number;
-  offensiveRebounds: number;
-  defensiveRebounds: number;
-  fieldGoalsMade: number;
-  fieldGoalsAttempted: number;
-  threePointersMade: number;
-  threePointersAttempted: number;
-  freeThrowsMade: number;
-  freeThrowsAttempted: number;
-  plusMinus: number;
-  fantasyPoints: number;
-  doubleDoubles: number;
-  tripleDoubles: number;
-  personalFouls: number;
-  age: number;
-  height: string;
-  weight: number;
-  efficiencyRating: number;
-  trueShootingPercentage: number;
-  effectiveFieldGoalPercentage: number;
-  assistToTurnoverRatio: number;
-  impactScore: number;
-  usageRate: number;
-  playerEfficiencyRating: number;
-}
-
-export interface BoxScore {
-  id: number;
-  gameId: number;
-  playerId: number;
-  playerName: string;
-  teamId: number;
-  teamName: string;
-  minutesPlayed: string;
-  points: number;
-  rebounds: number;
-  assists: number;
-  steals: number;
-  blocks: number;
-  turnovers: number;
-  fieldGoalsMade: number;
-  fieldGoalsAttempted: number;
-  threePointersMade: number;
-  threePointersAttempted: number;
-  freeThrowsMade: number;
-  freeThrowsAttempted: number;
-  plusMinus: number;
-  isStarter: boolean;
-}
+import { environment } from '../environments/environment';
+import { Player } from '../models/player.model';
+import { Team } from '../models/team.model';
+import { BoxScore } from '../models/box-score.model';
+import { RecentGame } from '../models/recent-game.model';
 
 @Injectable({ providedIn: 'root' })
 export class BasketballDataService {
-  private readonly baseUrl = window.location.hostname === 'localhost' 
-    ? 'http://localhost:8080/api' 
-    : 'http://13.59.211.131:8080/api';
+  private readonly baseUrl = environment.apiBaseUrl;
   constructor(private http: HttpClient) {}
   // Player endpoints
   getAllPlayers(): Observable<Player[]> { 
@@ -176,7 +100,7 @@ export class BasketballDataService {
   }
   
   // Deprecated - no longer used
-  getTeamStats(): TeamStats[] { 
-    return []; 
-  }
+  // getTeamStats(): TeamStats[] { 
+  //   return []; 
+  // }
 }

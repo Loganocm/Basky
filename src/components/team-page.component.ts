@@ -1,6 +1,7 @@
 import { Component, OnInit, OnChanges, SimpleChanges, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BasketballDataService, Player } from '../services/basketball-data.service';
+import { BasketballDataService } from '../services/basketball-data.service';
+import { Player } from '../models/player.model';
 import { RecentGame } from '../interfaces/recent-game.interface';
 
 interface TeamGameDisplay {

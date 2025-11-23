@@ -1,0 +1,113 @@
+    <div class="app-container">
+      <header class="header">
+        <div class="container">
+          <div class="header-content">
+            <div class="header-title">
+              <h1>Basky</h1>
+            </div>
+            <p class="header-subtitle">
+              Cool and quirky stats to write home about
+            </p>
+          </div>
+        </div>
+      </header>
+
+      <!-- Player Search Bar -->
+      <div class="search-bar-container">
+        <div class="search-bar-wrapper">
+          <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+          <input 
+            type="text" 
+            class="search-input" 
+            placeholder="Search for players..."
+            [(ngModel)]="searchQuery"
+            (input)="onSearchInput()"
+            (focus)="showSearchResults = true"
+            (blur)="onSearchBlur()">
+          <button *ngIf="searchQuery" class="clear-button" (click)="clearSearch()">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        
+        <!-- Search Results Dropdown -->
+        <div class="search-results" *ngIf="showSearchResults && searchQuery && filteredPlayers.length > 0">
+          <div 
+            *ngFor="let player of filteredPlayers.slice(0, SEARCH_RESULTS_LIMIT)" 
+            class="search-result-item"
+            (mousedown)="selectSearchPlayer(player.name)">
+            <div class="player-info">
+              <div class="player-name">{{ player.name }}</div>
+              <div class="player-details">
+                <span class="player-team">{{ player.teamAbbreviation }}</span>
+                <span class="player-position">{{ player.position }}</span>
+                <span class="player-number" *ngIf="player.jerseyNumber">#{{ player.jerseyNumber }}</span>
+              </div>
+            </div>
+            <div class="player-stats">
+              <span class="stat-item">{{ player.points.toFixed(1) }} PPG</span>
+              <span class="stat-item">{{ player.rebounds.toFixed(1) }} RPG</span>
+              <span class="stat-item">{{ player.assists.toFixed(1) }} APG</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- No Results Message -->
+        <div class="search-results no-results" *ngIf="showSearchResults && searchQuery && filteredPlayers.length === 0">
+          <div class="no-results-message">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <p>No players found</p>
+          </div>
+        </div>
+      </div>
+
+      <main class="main-content" [style]="backgroundStyle">
+        <div class="main-overlay"></div>
+        
+        <!-- Team Carousel Semicircle -->
+        <div class="team-carousel">
+          <div class="carousel-track"
+               (wheel)="onCarouselWheel($event)"
+               (touchstart)="onTouchStart($event)"
+               (touchmove)="onTouchMove($event)"
+               (touchend)="onTouchEnd()"
+               [style.transform]="'translateY(' + carouselOffset + 'px)'">
+            <div *ngFor="let team of teams; let i = index" 
+                 class="team-item"
+                 [class.active]="selectedTeam === team"
+                 (click)="selectTeam(team)">
+              <div class="team-logo">{{ team.abbreviation }}</div>
+              <div class="team-name">{{ getTeamDisplayName(team) }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="container main-layout">
+          <div class="content-area">
+            <!-- Show game page when game is selected (highest priority) -->
+            <app-game-page *ngIf="selectedGame" [gameId]="selectedGame" (back)="clearGameSelection()" (viewPlayerEvent)="viewPlayer($event)"></app-game-page>
+            <!-- Show player page when player is selected -->
+            <app-player-page *ngIf="selectedPlayer && !selectedGame" [playerName]="selectedPlayer" (back)="clearPlayerSelection()" (viewGameEvent)="viewGame($event)"></app-player-page>
+            <!-- Show team page when team is selected -->
+            <app-team-page *ngIf="selectedTeam && !selectedPlayer && !selectedGame" [team]="selectedTeam" (back)="clearSelection()" (viewPlayerEvent)="viewPlayer($event)" (viewGameEvent)="viewGame($event)"></app-team-page>
+            <!-- Show stat detail when stat is selected -->
+            <app-stat-detail *ngIf="selectedStat && !selectedPlayer && !selectedGame" 
+              [statKey]="selectedStat!" 
+              [initialSearchQuery]="statSearchQuery"
+              (back)="clearStatSelection()" 
+              (viewPlayerEvent)="viewPlayer($event)"
+              (searchQueryChange)="onStatSearchQueryChange($event)"></app-stat-detail>
+            <!-- Show leaderboards when nothing is selected -->
+            <app-category-leaderboards *ngIf="!selectedTeam && !selectedStat && !selectedPlayer && !selectedGame" (viewMoreStatsEvent)="viewStat($event)" (viewPlayerEvent)="viewPlayer($event)"></app-category-leaderboards>
+          </div>
+          <div class="sidebar-area" *ngIf="!selectedTeam && !selectedStat && !selectedPlayer && !selectedGame">
+            <app-recent-games (viewGameEvent)="viewGame($event)"></app-recent-games>
+          </div>
+        </div>
+      </main>
+    </div>
