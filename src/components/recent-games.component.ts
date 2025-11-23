@@ -1,7 +1,7 @@
 import { Component, OnInit, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BasketballDataService } from '../services/basketball-data.service';
-import { RecentGame } from '../interfaces/recent-game.interface';
+import { RecentGame } from '../models/recent-game.model';
 
 @Component({
   selector: 'app-recent-games',

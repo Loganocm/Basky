@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { BasketballDataService } from '../services/basketball-data.service';
 import { Player } from '../models/player.model';
 import { BoxScore } from '../models/box-score.model';
-import { RecentGame } from '../interfaces/recent-game.interface';
+import { RecentGame } from '../models/recent-game.model';
 
 interface GameDetails {
   homeTeam: string;
