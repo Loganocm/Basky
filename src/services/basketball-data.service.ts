@@ -5,7 +5,7 @@ import { environment } from '../environments/environment';
 import { Player } from '../models/player.model';
 import { Team } from '../models/team.model';
 import { BoxScore } from '../models/box-score.model';
-import { RecentGame } from '../models/recent-game.model';
+import { RecentGame } from '../interfaces/recent-game.interface';
 
 @Injectable({ providedIn: 'root' })
 export class BasketballDataService {
